@@ -1,0 +1,130 @@
+version: 2.1
+
+aliases:
+  # build environment
+  - &docker-linux
+    docker:
+      - image: centos:7
+    working_directory: /root/src
+
+  # system dependencies
+  - &install-stack
+    run:
+      name: Install stack
+      command: |
+        curl -sSL https://get.haskellstack.org/ | sh
+        stack --version
+
+  # cache
+  - &build-cache-key
+    run:
+      name: Build cache key
+      command: |
+        FILES=(
+          stack.yaml
+          package.yaml
+          scripts/install-stack-deps.sh
+        )
+        cat "${FILES[@]}" > cache-key.txt
+  - &cache-key
+    v0-{{ checksum "cache-key.txt" }}
+  - &install-system-deps
+    run:
+      name: Install system dependencies
+      command: scripts/install-system-deps.sh
+  - &install-stack-deps
+    run:
+      name: Build external dependencies
+      command: scripts/install-stack-deps.sh
+
+  # build steps
+  - &run-build
+    run:
+      name: Build packages
+      command: stack build --test --no-run-tests
+
+  # test steps
+  - &run-hlint
+    run:
+      name: Run hlint
+      command: scripts/hlint.sh
+  - &run-stylish-haskell
+    run:
+      name: Run stylish-haskell
+      command: scripts/stylish-haskell.sh
+  - &run-tests
+    run:
+      name: Run tests
+      command: stack test
+
+jobs:
+  prebuild:
+    <<: *docker-linux
+    steps:
+      - checkout
+      - *build-cache-key
+      - persist_to_workspace:
+          root: .
+          paths:
+            - cache-key.txt
+
+  build:
+    <<: *docker-linux
+    steps:
+      - checkout
+      - attach_workspace:
+          at: .
+      - *install-system-deps
+      - *install-stack
+      - restore_cache:
+          key: *cache-key
+      - *install-stack-deps
+      - save_cache:
+          key: *cache-key
+          paths:
+            - ~/.stack
+            - .stack-work
+      - *run-build
+      - persist_to_workspace:
+          root: .
+          paths:
+            - .stack-work
+
+  lint:
+    <<: *docker-linux
+    steps:
+      - checkout
+      - attach_workspace:
+          at: .
+      - *install-stack
+      - restore_cache:
+          key: *cache-key
+      - *run-hlint
+      - *run-stylish-haskell
+
+  test:
+    <<: *docker-linux
+    steps:
+      - checkout
+      - attach_workspace:
+          at: .
+      - *install-stack
+      - restore_cache:
+          key: *cache-key
+      - *run-tests
+
+workflows:
+  version: 2
+
+  build_and_test:
+    jobs:
+      - prebuild
+      - build:
+          requires:
+            - prebuild
+      - lint:
+          requires:
+            - build
+      - test:
+          requires:
+            - build

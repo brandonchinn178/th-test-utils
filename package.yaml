@@ -1,0 +1,29 @@
+name: template-haskell-test-utils
+version: 0.1.0
+
+ghc-options: -Wall -Werror
+when:
+  - condition: impl(ghc >= 8.0)
+    ghc-options:
+      - -Wcompat
+      - -Wincomplete-record-updates
+      - -Wincomplete-uni-patterns
+      - -Wnoncanonical-monad-instances
+      - -Wnoncanonical-monadfail-instances
+
+dependencies:
+- base
+- template-haskell
+- transformers
+
+library:
+  source-dirs: src
+
+tests:
+  template-haskell-test-utils-test:
+    source-dirs:  test
+    main:         Main.hs
+    dependencies:
+      - tasty
+      - tasty-hunit
+      - template-haskell-test-utils
