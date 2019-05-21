@@ -133,7 +133,7 @@ tryQErr = tryQ' >=> either
 -- > $(tryQErr' spliceFail) :: String
 -- >
 -- > -- compile time error: "Q monad unexpectedly succeeded"
--- > $(tryQErr' spliceInt) :: Maybe String
+-- > $(tryQErr' spliceInt) :: String
 tryQErr' :: Q a -> Q Exp
 tryQErr' = tryQ' >=> either
   lift
