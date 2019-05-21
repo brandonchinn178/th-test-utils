@@ -24,7 +24,7 @@ import Control.Monad.IO.Class (MonadIO)
 import qualified Control.Monad.Trans.Class as Trans
 import Control.Monad.Trans.Except (ExceptT, catchE, runExceptT, throwE)
 import Control.Monad.Trans.State (StateT, put, runStateT)
-import Language.Haskell.TH (Exp, Q, appE, runQ)
+import Language.Haskell.TH (Exp, Q, appE, appTypeE, runQ)
 import Language.Haskell.TH.Syntax (Quasi(..), lift)
 
 -- $tryQ
@@ -112,8 +112,8 @@ tryQ' = fmap cast . (`runStateT` Nothing) . runExceptT . unTryQ . runQ
 -- > $(tryQ spliceInt) :: Either String Int
 tryQ :: Q Exp -> Q Exp
 tryQ = tryQ' >=> either
-  (appE [| Left |] . lift)
-  (appE [| Right |] . pure)
+  (appE (typeAppString [| Left |]) . lift)
+  (appE (typeAppString [| Right |]) . pure)
 
 -- | 'tryQ', except returns 'Just' the error message or 'Nothing' if the computation succeeded.
 --
@@ -124,8 +124,8 @@ tryQ = tryQ' >=> either
 -- > $(tryQErr spliceInt) :: Maybe String
 tryQErr :: Q a -> Q Exp
 tryQErr = tryQ' >=> either
-  (appE [| Just |] . lift)
-  (const [| Nothing |])
+  (appE (typeAppString [| Just |]) . lift)
+  (const (typeAppString [| Nothing |]))
 
 -- | 'tryQ', except returns the error message or fails if the computation succeeded.
 --
@@ -138,3 +138,8 @@ tryQErr' :: Q a -> Q Exp
 tryQErr' = tryQ' >=> either
   lift
   (const $ fail "Q monad unexpectedly succeeded")
+
+{- Helpers -}
+
+typeAppString :: Q Exp -> Q Exp
+typeAppString expQ = appTypeE expQ [t| String |]
