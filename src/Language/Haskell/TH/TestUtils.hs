@@ -10,8 +10,7 @@ This module defines utilites for testing Template Haskell code.
 {-# LANGUAGE TemplateHaskell #-}
 
 module Language.Haskell.TH.TestUtils
-  (
-    -- * Error recovery
+  ( -- * Error recovery
     -- $tryQ
     tryQ
   , tryQ'
@@ -36,13 +35,25 @@ import Language.Haskell.TH.Syntax (Quasi(..), lift)
 --
 -- > recover' :: (String -> Q a) -> Q a -> Q a
 -- >
--- > myTest :: Either String Int
--- > myTest = $(recover' (pure . Left) $ Right <$> spliceThatMayFailOrReturnAnIntExp)
+-- > spliceFail :: Q Exp
+-- > spliceFail = fail "This splice fails"
+-- >
+-- > spliceInt :: Q Exp
+-- > spliceInt = [| 1 |]
+-- >
+-- > test1 :: Either String Int
+-- > test1 = $(recover' (pure . Left) $ Right <$> spliceFail) -- generates `Left "This splice fails"`
+-- >
+-- > test2 :: Either String Int
+-- > test2 = $(recover' (pure . Left) $ Right <$> spliceInt) -- generates `Right 1`
 --
 -- But for now, we'll have to use 'tryQ':
 --
--- > myTest :: Either String Int
--- > myTest = $(tryQ' spliceThatMayFailOrReturnAnIntExp)
+-- > test1 :: Either String Int
+-- > test1 = $(tryQ' spliceFail) -- generates `Left "This splice fails"`
+-- >
+-- > test2 :: Either String Int
+-- > test2 = $(tryQ' spliceInt) -- generates `Right 1`
 --
 -- ref. https://ghc.haskell.org/trac/ghc/ticket/2340
 
@@ -91,19 +102,36 @@ tryQ = fmap cast . (`runStateT` Nothing) . runExceptT . unTryQ . runQ
     cast (Left (), Just msg) = Left msg
     cast (Right a, _) = Right a
 
--- | Run the given Template Haskell computation, returning either an error message or the final
--- result as an expression that can be spliced.
+-- | 'tryQ', except returns 'Left' the error message or 'Right' the final result.
+--
+-- > -- Left "This splice fails"
+-- > $(tryQ' spliceFail) :: Either String Int
+-- >
+-- > -- Right 1
+-- > $(tryQ' spliceInt) :: Either String Int
 tryQ' :: Q Exp -> Q Exp
 tryQ' = tryQ >=> either
   (appE [| Left |] . lift)
   (appE [| Right |] . pure)
 
--- | 'tryQ', except returns Just the error message or Nothing if the computation succeeded.
+-- | 'tryQ', except returns 'Just' the error message or 'Nothing' if the computation succeeded.
+--
+-- > -- Just "This splice fails"
+-- > $(tryQErr spliceFail) :: Maybe String
+-- >
+-- > -- Nothing
+-- > $(tryQErr spliceInt) :: Maybe String
 tryQErr :: Q a -> Q Exp
 tryQErr = tryQ >=> either
   (appE [| Just |] . lift)
   (const [| Nothing |])
 
 -- | 'tryQ', except returns the error message or fails if the computation succeeded.
+--
+-- > -- "This splice fails"
+-- > $(tryQErr' spliceFail) :: String
+-- >
+-- > -- compile time error: "Q monad unexpectedly succeeded"
+-- > $(tryQErr' spliceInt) :: Maybe String
 tryQErr' :: Q a -> Q Exp
 tryQErr' = tryQ >=> either lift (const $ fail "Q monad unexpectedly succeeded")
