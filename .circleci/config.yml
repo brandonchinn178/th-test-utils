@@ -30,7 +30,9 @@ aliases:
   - &install-stack-deps
     run:
       name: Build external dependencies
-      command: stack build --test --no-run-tests --only-dependencies
+      command: |
+        stack build --test --no-run-tests --only-dependencies
+        stack build hlint stylish-haskell
 
   # build steps
   - &run-build
