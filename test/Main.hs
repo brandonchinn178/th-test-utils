@@ -10,9 +10,9 @@ import TH
 main :: IO ()
 main = defaultMain $ testGroup "template-haskell-test-utils"
   [ testCase "Maybe" $
-    $(tryQ' $ firstConstrForType "Maybe") @== Right "Nothing"
+    $(tryQ $ firstConstrForType "Maybe") @== Right "Nothing"
   , testCase "NonExistent" $
-    $(tryQ' $ firstConstrForType "NonExistent") @== Left "Type does not exist: NonExistent"
+    $(tryQ $ firstConstrForType "NonExistent") @== Left "Type does not exist: NonExistent"
   , testCase "Show" $
     $(tryQErr $ firstConstrForType "Show") @?= Just "Not a data type: Show"
   , testCase "Void" $

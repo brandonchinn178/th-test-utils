@@ -12,8 +12,8 @@ This module defines utilites for testing Template Haskell code.
 module Language.Haskell.TH.TestUtils
   ( -- * Error recovery
     -- $tryQ
-    tryQ
-  , tryQ'
+    tryQ'
+  , tryQ
   , tryQErr
   , tryQErr'
   ) where
@@ -50,10 +50,10 @@ import Language.Haskell.TH.Syntax (Quasi(..), lift)
 -- But for now, we'll have to use 'tryQ':
 --
 -- > test1 :: Either String Int
--- > test1 = $(tryQ' spliceFail) -- generates `Left "This splice fails"`
+-- > test1 = $(tryQ spliceFail) -- generates `Left "This splice fails"`
 -- >
 -- > test2 :: Either String Int
--- > test2 = $(tryQ' spliceInt) -- generates `Right 1`
+-- > test2 = $(tryQ spliceInt) -- generates `Right 1`
 --
 -- ref. https://ghc.haskell.org/trac/ghc/ticket/2340
 
@@ -95,22 +95,23 @@ instance Quasi TryQ where
 
 -- | Run the given Template Haskell computation, returning either an error message or the final
 -- result.
-tryQ :: Q a -> Q (Either String a)
-tryQ = fmap cast . (`runStateT` Nothing) . runExceptT . unTryQ . runQ
+tryQ' :: Q a -> Q (Either String a)
+tryQ' = fmap cast . (`runStateT` Nothing) . runExceptT . unTryQ . runQ
   where
     cast (Left (), Nothing) = Left "Q monad failure"
     cast (Left (), Just msg) = Left msg
     cast (Right a, _) = Right a
 
--- | 'tryQ', except returns 'Left' the error message or 'Right' the final result.
+-- | Run the given Template Haskell computation, returning a splicable expression that resolves
+-- to 'Left' the error message or 'Right' the final result.
 --
 -- > -- Left "This splice fails"
--- > $(tryQ' spliceFail) :: Either String Int
+-- > $(tryQ spliceFail) :: Either String Int
 -- >
 -- > -- Right 1
--- > $(tryQ' spliceInt) :: Either String Int
-tryQ' :: Q Exp -> Q Exp
-tryQ' = tryQ >=> either
+-- > $(tryQ spliceInt) :: Either String Int
+tryQ :: Q Exp -> Q Exp
+tryQ = tryQ' >=> either
   (appE [| Left |] . lift)
   (appE [| Right |] . pure)
 
@@ -122,7 +123,7 @@ tryQ' = tryQ >=> either
 -- > -- Nothing
 -- > $(tryQErr spliceInt) :: Maybe String
 tryQErr :: Q a -> Q Exp
-tryQErr = tryQ >=> either
+tryQErr = tryQ' >=> either
   (appE [| Just |] . lift)
   (const [| Nothing |])
 
@@ -134,4 +135,6 @@ tryQErr = tryQ >=> either
 -- > -- compile time error: "Q monad unexpectedly succeeded"
 -- > $(tryQErr' spliceInt) :: Maybe String
 tryQErr' :: Q a -> Q Exp
-tryQErr' = tryQ >=> either lift (const $ fail "Q monad unexpectedly succeeded")
+tryQErr' = tryQ' >=> either
+  lift
+  (const $ fail "Q monad unexpectedly succeeded")
