@@ -15,13 +15,15 @@ main = defaultMain $ testGroup "th-test-utils"
 
 testFirstConstrForType :: TestTree
 testFirstConstrForType = testGroup "firstConstrForType"
-  [ testCase "Maybe" $
-    $(tryQ $ firstConstrForType "Maybe") @== Right "Nothing"
-  , testCase "NonExistent" $
-    $(tryQ $ firstConstrForType "NonExistent") @== Left "Type does not exist: NonExistent"
-  , testCase "Show" $
+  [ testCase "tryQ Maybe" $
+    $(tryQ $ firstConstrForType "Maybe") @?= (Right "Nothing" :: Either String String)
+  , testCase "tryQErr Maybe" $
+    $(tryQErr $ firstConstrForType "Maybe") @?= (Nothing :: Maybe String)
+  , testCase "tryQ NonExistent" $
+    $(tryQ $ firstConstrForType "NonExistent") @?= (Left "Type does not exist: NonExistent" :: Either String String)
+  , testCase "tryQErr Show" $
     $(tryQErr $ firstConstrForType "Show") @?= Just "Not a data type: Show"
-  , testCase "Void" $
+  , testCase "tryQErr' Void" $
     $(tryQErr' $ firstConstrForType "Void") @?= "Data type has no constructors: Void"
   ]
 
@@ -32,7 +34,3 @@ testExplode = testGroup "explode"
   , testCase "\"\"" $
     $(tryQ $ explode "") @?= (Left "Cannot explode empty string" :: Either String [String])
   ]
-
--- | Helper to specify the type of the splice.
-(@==) :: Either String String -> Either String String -> IO ()
-(@==) = (@?=)
