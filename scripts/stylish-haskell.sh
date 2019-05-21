@@ -35,6 +35,8 @@ while read -r -d $'\0'; do
     FILES+=("${REPLY}")
 done < <(get_files)
 
+stack build stylish-haskell
+
 RUN_STYLISH=$(stack exec -- bash -c 'type -P stylish-haskell')
 if [[ -z "${RUN_STYLISH}" ]]; then
     echo "stylish-haskell not installed"

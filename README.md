@@ -11,7 +11,6 @@ TODO
 ### Build
 
 ```bash
-scripts/install-stack-deps.sh
 stack build
 ```
 
