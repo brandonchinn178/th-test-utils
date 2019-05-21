@@ -26,12 +26,12 @@ aliases:
         )
         cat "${FILES[@]}" > cache-key.txt
   - &cache-key
-    v0-{{ checksum "cache-key.txt" }}
+    v1-{{ checksum "cache-key.txt" }}
   - &install-stack-deps
     run:
       name: Build external dependencies
       command: |
-        stack build --test --no-run-tests --only-dependencies
+        stack build --test --haddock --only-dependencies
         stack build hlint stylish-haskell
 
   # build steps
