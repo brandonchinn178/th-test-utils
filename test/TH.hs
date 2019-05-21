@@ -18,3 +18,7 @@ firstConstrForType typeName = lookupTypeName typeName >>= \case
       NormalC name _ -> pure name
       RecC name _ -> pure name
       _ -> fail $ "Weird constructor: " ++ typeName
+
+explode :: String -> ExpQ
+explode [] = fail "Cannot explode empty string"
+explode xs = listE $ map (litE . stringL . (:[])) xs
