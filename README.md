@@ -1,4 +1,4 @@
-# template-haskell-test-utils
+# th-test-utils
 
 This package contains utility functions for testing Template Haskell code.
 

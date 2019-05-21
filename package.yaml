@@ -1,4 +1,4 @@
-name: template-haskell-test-utils
+name: th-test-utils
 version: 0.1.0
 
 ghc-options: -Wall -Werror
@@ -20,10 +20,10 @@ library:
   source-dirs: src
 
 tests:
-  template-haskell-test-utils-test:
+  th-test-utils-test:
     source-dirs:  test
     main:         Main.hs
     dependencies:
       - tasty
       - tasty-hunit
-      - template-haskell-test-utils
+      - th-test-utils

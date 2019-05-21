@@ -8,7 +8,7 @@ import Language.Haskell.TH.TestUtils
 import TH
 
 main :: IO ()
-main = defaultMain $ testGroup "template-haskell-test-utils"
+main = defaultMain $ testGroup "th-test-utils"
   [ testCase "Maybe" $
     $(tryQ $ firstConstrForType "Maybe") @== Right "Nothing"
   , testCase "NonExistent" $
