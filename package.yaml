@@ -1,5 +1,23 @@
 name: th-test-utils
 version: 0.1.0
+verbatim:
+  cabal-version: '>= 1.10'
+# license: BSD3
+# license-file: LICENSE
+author:
+  - Brandon Chinn <brandon@leapyear.io>
+maintainer:
+  - Brandon Chinn <brandon@leapyear.io>
+category: Testing
+synopsis: Utility functions for testing Template Haskell code
+description: |
+  Utility functions for testing Template Haskell code, including
+  functions for testing failures in the Q monad.
+extra-source-files:
+  - README.md
+  - CHANGELOG.md
+
+github: LeapYear/th-test-utils
 
 ghc-options: -Wall -Werror
 when:

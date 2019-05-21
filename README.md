@@ -39,34 +39,3 @@ main = defaultMain $ testGroup "my-project"
       $(tryQErr' $ quoteExp numberify "foo") @?= "not a number"
   ]
 ```
-
-## Developing
-
-### Build
-
-```bash
-stack build
-```
-
-### Lint
-
-* HLint
-
-    ```bash
-    scripts/hlint.sh
-    ```
-
-* stylish-haskell
-
-    ```bash
-    scripts/stylish-haskell.sh
-
-    # apply stylish-haskell changes
-    scripts/stylish-haskell.sh --apply
-    ```
-
-### Run tests
-
-```bash
-stack test
-```

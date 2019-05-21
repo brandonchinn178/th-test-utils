@@ -38,7 +38,7 @@ aliases:
   - &run-build
     run:
       name: Build packages
-      command: stack build --test --no-run-tests
+      command: stack build --test --no-run-tests --haddock
 
   # test steps
   - &run-hlint
