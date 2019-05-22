@@ -1,126 +1,87 @@
 version: 2.1
 
 aliases:
-  # build environment
-  - &docker-linux
+  - &param-stack-yaml
+    stack_yaml:
+      type: string
+      default: stack.yaml
+
+  - &cache-key
+    v0-{{ checksum "cache-key.txt" }}
+
+executors:
+  centos7:
+    parameters:
+      <<: *param-stack-yaml
+
     docker:
       - image: centos:7
     working_directory: /root/src
-
-  # system dependencies
-  - &install-stack
-    run:
-      name: Install stack
-      command: |
-        curl -sSL https://get.haskellstack.org/ | sh
-        stack --version
-
-  # cache
-  - &build-cache-key
-    run:
-      name: Build cache key
-      command: |
-        FILES=(
-          stack.yaml
-          package.yaml
-        )
-        cat "${FILES[@]}" > cache-key.txt
-  - &cache-key
-    v1-{{ checksum "cache-key.txt" }}
-  - &install-stack-deps
-    run:
-      name: Build external dependencies
-      command: |
-        stack build --test --haddock --only-dependencies
-        stack build hlint stylish-haskell
-
-  # build steps
-  - &run-build
-    run:
-      name: Build packages
-      command: stack build --test --no-run-tests --haddock
-
-  # test steps
-  - &run-hlint
-    run:
-      name: Run hlint
-      command: scripts/hlint.sh
-  - &run-stylish-haskell
-    run:
-      name: Run stylish-haskell
-      command: scripts/stylish-haskell.sh
-  - &run-tests
-    run:
-      name: Run tests
-      command: stack test
+    shell: /bin/bash -eux -o pipefail
+    environment:
+      STACK_YAML: << parameters.stack_yaml >>
 
 jobs:
-  prebuild:
-    <<: *docker-linux
-    steps:
-      - checkout
-      - *build-cache-key
-      - persist_to_workspace:
-          root: .
-          paths:
-            - cache-key.txt
+  run_build_and_test:
+    parameters:
+      <<: *param-stack-yaml
 
-  build:
-    <<: *docker-linux
+    executor:
+      name: centos7
+      stack_yaml: << parameters.stack_yaml >>
+
     steps:
+      # init
       - checkout
-      - attach_workspace:
-          at: .
-      - *install-stack
+      - run:
+          name: Build cache key
+          command: |
+            FILES=(
+              "${STACK_YAML}"
+              package.yaml
+            )
+            cat "${FILES[@]}" > cache-key.txt
+
+      # install stack and dependencies
+      - run:
+          name: Install stack
+          command: |
+            curl -sSL https://get.haskellstack.org/ | sh
+            stack --version
       - restore_cache:
           key: *cache-key
-      - *install-stack-deps
+      - run:
+          name: Build external dependencies
+          command: |
+            stack build --test --haddock --only-dependencies
+            # build hlint/stylish-haskell for cache
+            stack build hlint stylish-haskell
       - save_cache:
           key: *cache-key
           paths:
             - ~/.stack
             - .stack-work
-      - *run-build
-      - persist_to_workspace:
-          root: .
-          paths:
-            - .stack-work
 
-  lint:
-    <<: *docker-linux
-    steps:
-      - checkout
-      - attach_workspace:
-          at: .
-      - *install-stack
-      - restore_cache:
-          key: *cache-key
-      - *run-hlint
-      - *run-stylish-haskell
-
-  test:
-    <<: *docker-linux
-    steps:
-      - checkout
-      - attach_workspace:
-          at: .
-      - *install-stack
-      - restore_cache:
-          key: *cache-key
-      - *run-tests
+      # lint, build, and test
+      - run:
+          name: Lint
+          command: |
+            set +e
+            STATUS=0
+            scripts/hlint.sh || STATUS=1
+            scripts/stylish-haskell.sh || STATUS=1
+            exit "${STATUS}"
+      - run:
+          name: Build
+          command: stack build --test --no-run-tests --haddock
+      - run:
+          name: Test
+          command: stack test
 
 workflows:
   version: 2
 
   build_and_test:
     jobs:
-      - prebuild
-      - build:
-          requires:
-            - prebuild
-      - lint:
-          requires:
-            - build
-      - test:
-          requires:
-            - build
+      - run_build_and_test:
+          stack_yaml: stack-lts-13.5.yaml
