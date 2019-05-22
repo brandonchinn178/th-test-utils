@@ -21,7 +21,9 @@ module Language.Haskell.TH.TestUtils
 
 import Control.Monad ((>=>))
 import qualified Control.Monad.Fail as Fail
+#if MIN_VERSION_template_haskell(2,13,0)
 import Control.Monad.IO.Class (MonadIO)
+#endif
 import qualified Control.Monad.Trans.Class as Trans
 import Control.Monad.Trans.Except (ExceptT, catchE, runExceptT, throwE)
 import Control.Monad.Trans.State (StateT, put, runStateT)
@@ -62,7 +64,14 @@ import Language.Haskell.TH.Syntax (Quasi(..), lift)
 -- ref. https://ghc.haskell.org/trac/ghc/ticket/2340
 
 newtype TryQ a = TryQ { unTryQ :: ExceptT () (StateT (Maybe String) Q) a }
-  deriving (Functor, Applicative, Monad, MonadIO)
+  deriving
+    ( Functor
+    , Applicative
+    , Monad
+    #if MIN_VERSION_template_haskell(2,13,0)
+    , MonadIO
+    #endif
+    )
 
 liftQ :: Q a -> TryQ a
 liftQ = TryQ . Trans.lift . Trans.lift
@@ -79,23 +88,33 @@ instance Quasi TryQ where
   qRecover (TryQ handler) (TryQ action) = TryQ $ catchE action (const handler)
   qLookupName b name = liftQ $ qLookupName b name
   qReify name = liftQ $ qReify name
-  qReifyFixity name = liftQ $ qReifyFixity name
   qReifyInstances name types = liftQ $ qReifyInstances name types
   qReifyRoles name = liftQ $ qReifyRoles name
   qReifyAnnotations ann = liftQ $ qReifyAnnotations ann
   qReifyModule m = liftQ $ qReifyModule m
-  qReifyConStrictness name = liftQ $ qReifyConStrictness name
   qLocation = liftQ qLocation
+  qRunIO m = liftQ $ qRunIO m
   qAddDependentFile fp = liftQ $ qAddDependentFile fp
-  qAddTempFile s = liftQ $ qAddTempFile s
   qAddTopDecls decs = liftQ $ qAddTopDecls decs
-  qAddForeignFilePath lang s = liftQ $ qAddForeignFilePath lang s
   qAddModFinalizer q = liftQ $ qAddModFinalizer q
-  qAddCorePlugin s = liftQ $ qAddCorePlugin s
   qGetQ = liftQ qGetQ
   qPutQ x = liftQ $ qPutQ x
+
+  #if MIN_VERSION_template_haskell(2,11,0)
+  qReifyFixity name = liftQ $ qReifyFixity name
+  qReifyConStrictness name = liftQ $ qReifyConStrictness name
   qIsExtEnabled ext = liftQ $ qIsExtEnabled ext
   qExtsEnabled = liftQ qExtsEnabled
+  #endif
+
+  #if MIN_VERSION_template_haskell(2,13,0)
+  qAddCorePlugin s = liftQ $ qAddCorePlugin s
+  #endif
+
+  #if MIN_VERSION_template_haskell(2,14,0)
+  qAddTempFile s = liftQ $ qAddTempFile s
+  qAddForeignFilePath lang s = liftQ $ qAddForeignFilePath lang s
+  #endif
 
 -- | Run the given Template Haskell computation, returning either an error message or the final
 -- result.
