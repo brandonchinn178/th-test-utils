@@ -22,12 +22,17 @@ github: LeapYear/th-test-utils
 ghc-options: -Wall -Werror
 when:
   - condition: impl(ghc >= 8.0)
-    ghc-options:
-      - -Wcompat
-      - -Wincomplete-record-updates
-      - -Wincomplete-uni-patterns
-      - -Wnoncanonical-monad-instances
-      - -Wnoncanonical-monadfail-instances
+    then:
+      ghc-options:
+        - -Wcompat
+        - -Wincomplete-record-updates
+        - -Wincomplete-uni-patterns
+        - -Wnoncanonical-monad-instances
+        - -Wnoncanonical-monadfail-instances
+    else:
+      dependencies:
+        - fail
+        - transformers-compat
 
 dependencies:
 - base
