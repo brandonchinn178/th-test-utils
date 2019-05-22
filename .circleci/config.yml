@@ -119,9 +119,3 @@ workflows:
       - run_build_and_test:
           name: test_ghc_8.0
           stack_yaml: stack-ghc-8.0.yaml
-      - run_build_and_test:
-          name: test_ghc_7.10
-          stack_yaml: stack-ghc-7.10.yaml
-      - run_build_and_test:
-          name: test_ghc_7.8
-          stack_yaml: stack-ghc-7.8.yaml

@@ -10,6 +10,10 @@ This module defines utilites for testing Template Haskell code.
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE TemplateHaskell #-}
 
+#if MIN_VERSION_base(4,9,0)
+# define HAS_MONADFAIL 1
+#endif
+
 module Language.Haskell.TH.TestUtils
   ( -- * Error recovery
     -- $tryQ
@@ -88,10 +92,12 @@ instance Quasi TryQ where
   qRecover (TryQ handler) (TryQ action) = TryQ $ catchE action (const handler)
   qLookupName b name = liftQ $ qLookupName b name
   qReify name = liftQ $ qReify name
+  qReifyFixity name = liftQ $ qReifyFixity name
   qReifyInstances name types = liftQ $ qReifyInstances name types
   qReifyRoles name = liftQ $ qReifyRoles name
   qReifyAnnotations ann = liftQ $ qReifyAnnotations ann
   qReifyModule m = liftQ $ qReifyModule m
+  qReifyConStrictness name = liftQ $ qReifyConStrictness name
   qLocation = liftQ qLocation
   qRunIO m = liftQ $ qRunIO m
   qAddDependentFile fp = liftQ $ qAddDependentFile fp
@@ -99,13 +105,8 @@ instance Quasi TryQ where
   qAddModFinalizer q = liftQ $ qAddModFinalizer q
   qGetQ = liftQ qGetQ
   qPutQ x = liftQ $ qPutQ x
-
-  #if MIN_VERSION_template_haskell(2,11,0)
-  qReifyFixity name = liftQ $ qReifyFixity name
-  qReifyConStrictness name = liftQ $ qReifyConStrictness name
   qIsExtEnabled ext = liftQ $ qIsExtEnabled ext
   qExtsEnabled = liftQ qExtsEnabled
-  #endif
 
   #if MIN_VERSION_template_haskell(2,13,0)
   qAddCorePlugin s = liftQ $ qAddCorePlugin s
