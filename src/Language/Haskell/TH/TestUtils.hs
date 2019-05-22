@@ -6,6 +6,7 @@ Portability :  portable
 
 This module defines utilites for testing Template Haskell code.
 -}
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE TemplateHaskell #-}
 
@@ -24,7 +25,10 @@ import Control.Monad.IO.Class (MonadIO)
 import qualified Control.Monad.Trans.Class as Trans
 import Control.Monad.Trans.Except (ExceptT, catchE, runExceptT, throwE)
 import Control.Monad.Trans.State (StateT, put, runStateT)
-import Language.Haskell.TH (Exp, Q, appE, appTypeE, runQ)
+import Language.Haskell.TH (Exp, Q, appE, runQ)
+#if MIN_VERSION_template_haskell(2,12,0)
+import qualified Language.Haskell.TH as TH
+#endif
 import Language.Haskell.TH.Syntax (Quasi(..), lift)
 
 -- $tryQ
@@ -142,4 +146,9 @@ tryQErr' = tryQ' >=> either
 {- Helpers -}
 
 typeAppString :: Q Exp -> Q Exp
-typeAppString expQ = appTypeE expQ [t| String |]
+typeAppString expQ =
+  #if MIN_VERSION_template_haskell(2,12,0)
+    TH.appTypeE expQ [t| String |]
+  #else
+    expQ
+  #endif
