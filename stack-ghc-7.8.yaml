@@ -2,3 +2,6 @@ resolver: lts-2.22
 
 packages:
   - .
+
+extra-deps:
+  - fail-4.9.0.0
