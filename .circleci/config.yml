@@ -84,14 +84,20 @@ workflows:
   build_and_test:
     jobs:
       - run_build_and_test:
+          name: test_ghc_8.6
           stack_yaml: stack-lts-13.22.yaml
       - run_build_and_test:
+          name: test_ghc_8.4
           stack_yaml: stack-lts-12.26.yaml
       - run_build_and_test:
+          name: test_ghc_8.2
           stack_yaml: stack-lts-11.22.yaml
       - run_build_and_test:
+          name: test_ghc_8.0
           stack_yaml: stack-lts-9.21.yaml
       - run_build_and_test:
+          name: test_ghc_7.10
           stack_yaml: stack-lts-6.35.yaml
       - run_build_and_test:
+          name: test_ghc_7.8
           stack_yaml: stack-lts-2.22.yaml
