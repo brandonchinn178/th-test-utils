@@ -87,3 +87,5 @@ workflows:
           stack_yaml: stack-lts-13.22.yaml
       - run_build_and_test:
           stack_yaml: stack-lts-12.26.yaml
+      - run_build_and_test:
+          stack_yaml: stack-lts-11.22.yaml
