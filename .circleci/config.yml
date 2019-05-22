@@ -84,4 +84,4 @@ workflows:
   build_and_test:
     jobs:
       - run_build_and_test:
-          stack_yaml: stack-lts-13.5.yaml
+          stack_yaml: stack-lts-13.22.yaml
