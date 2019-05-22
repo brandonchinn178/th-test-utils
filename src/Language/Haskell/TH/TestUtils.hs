@@ -115,6 +115,8 @@ instance Quasi TryQ where
   #if MIN_VERSION_template_haskell(2,14,0)
   qAddTempFile s = liftQ $ qAddTempFile s
   qAddForeignFilePath lang s = liftQ $ qAddForeignFilePath lang s
+  #elif MIN_VERSION_template_haskell(2,12,0)
+  qAddForeignFile lang s = liftQ $ qAddForeignFile lang s
   #endif
 
 -- | Run the given Template Haskell computation, returning either an error message or the final
