@@ -72,9 +72,9 @@ newtype TryQ a = TryQ { unTryQ :: ExceptT () (StateT (Maybe String) Q) a }
     ( Functor
     , Applicative
     , Monad
-    #if MIN_VERSION_template_haskell(2,13,0)
+#if MIN_VERSION_template_haskell(2,13,0)
     , MonadIO
-    #endif
+#endif
     )
 
 liftQ :: Q a -> TryQ a
@@ -108,16 +108,16 @@ instance Quasi TryQ where
   qIsExtEnabled ext = liftQ $ qIsExtEnabled ext
   qExtsEnabled = liftQ qExtsEnabled
 
-  #if MIN_VERSION_template_haskell(2,13,0)
+#if MIN_VERSION_template_haskell(2,13,0)
   qAddCorePlugin s = liftQ $ qAddCorePlugin s
-  #endif
+#endif
 
-  #if MIN_VERSION_template_haskell(2,14,0)
+#if MIN_VERSION_template_haskell(2,14,0)
   qAddTempFile s = liftQ $ qAddTempFile s
   qAddForeignFilePath lang s = liftQ $ qAddForeignFilePath lang s
-  #elif MIN_VERSION_template_haskell(2,12,0)
+#elif MIN_VERSION_template_haskell(2,12,0)
   qAddForeignFile lang s = liftQ $ qAddForeignFile lang s
-  #endif
+#endif
 
 -- | Run the given Template Haskell computation, returning either an error message or the final
 -- result.
@@ -169,8 +169,8 @@ tryQErr' = tryQ' >=> either
 
 typeAppString :: Q Exp -> Q Exp
 typeAppString expQ =
-  #if MIN_VERSION_template_haskell(2,12,0)
+#if MIN_VERSION_template_haskell(2,12,0)
     TH.appTypeE expQ [t| String |]
-  #else
+#else
     expQ
-  #endif
+#endif

@@ -10,13 +10,13 @@ firstConstrForType :: String -> ExpQ
 firstConstrForType typeName = lookupTypeName typeName >>= \case
   Nothing -> fail $ "Type does not exist: " ++ typeName
   Just name -> reify name >>= \case
-    #if MIN_VERSION_template_haskell(2,11,0)
+#if MIN_VERSION_template_haskell(2,11,0)
     TyConI (DataD _ _ _ _ cons _) -> firstConstr cons
     TyConI (NewtypeD _ _ _ _ con _) -> firstConstr [con]
-    #else
+#else
     TyConI (DataD _ _ _ cons _) -> firstConstr cons
     TyConI (NewtypeD _ _ _ con _) -> firstConstr [con]
-    #endif
+#endif
     _ -> fail $ "Not a data type: " ++ typeName
   where
     firstConstr [] = fail $ "Data type has no constructors: " ++ typeName
