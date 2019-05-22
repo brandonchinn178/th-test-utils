@@ -1,18 +1,18 @@
 version: 2.1
 
 aliases:
-  - &param-stack-yaml
+  - &param_stack_yaml
     stack_yaml:
       type: string
       default: stack.yaml
 
-  - &cache-key
+  - &cache_key
     v0-{{ checksum "cache-key.txt" }}
 
 executors:
   centos7:
     parameters:
-      <<: *param-stack-yaml
+      <<: *param_stack_yaml
 
     docker:
       - image: centos:7
@@ -24,7 +24,7 @@ executors:
 jobs:
   run_build_and_test:
     parameters:
-      <<: *param-stack-yaml
+      <<: *param_stack_yaml
 
     executor:
       name: centos7
@@ -49,7 +49,7 @@ jobs:
             curl -sSL https://get.haskellstack.org/ | sh
             stack --version
       - restore_cache:
-          key: *cache-key
+          key: *cache_key
       - run:
           name: Build external dependencies
           command: |
@@ -57,7 +57,7 @@ jobs:
             # build hlint/stylish-haskell for cache
             stack build hlint stylish-haskell
       - save_cache:
-          key: *cache-key
+          key: *cache_key
           paths:
             - ~/.stack
             - .stack-work
