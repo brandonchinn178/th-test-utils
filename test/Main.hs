@@ -16,9 +16,9 @@ main = defaultMain $ testGroup "th-test-utils"
 testFirstConstrForType :: TestTree
 testFirstConstrForType = testGroup "firstConstrForType"
   [ testCase "tryQ Maybe" $
-    $(tryQ $ firstConstrForType "Maybe") @?= Right "Nothing"
+    $(tryQ $ firstConstrForType "Maybe") @?= (Right "Nothing" :: Either String String)
   , testCase "tryQErr Maybe" $
-    $(tryQErr $ firstConstrForType "Maybe") @?= Nothing
+    $(tryQErr $ firstConstrForType "Maybe") @?= (Nothing :: Maybe String)
   , testCase "tryQ NonExistent" $
     $(tryQ $ firstConstrForType "NonExistent") @?= (Left "Type does not exist: NonExistent" :: Either String String)
   , testCase "tryQErr Show" $

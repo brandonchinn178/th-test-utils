@@ -6,8 +6,13 @@ Portability :  portable
 
 This module defines utilites for testing Template Haskell code.
 -}
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE TemplateHaskell #-}
+
+#if MIN_VERSION_base(4,9,0)
+# define HAS_MONADFAIL 1
+#endif
 
 module Language.Haskell.TH.TestUtils
   ( -- * Error recovery
@@ -20,11 +25,16 @@ module Language.Haskell.TH.TestUtils
 
 import Control.Monad ((>=>))
 import qualified Control.Monad.Fail as Fail
+#if MIN_VERSION_template_haskell(2,13,0)
 import Control.Monad.IO.Class (MonadIO)
+#endif
 import qualified Control.Monad.Trans.Class as Trans
 import Control.Monad.Trans.Except (ExceptT, catchE, runExceptT, throwE)
 import Control.Monad.Trans.State (StateT, put, runStateT)
-import Language.Haskell.TH (Exp, Q, appE, appTypeE, runQ)
+import Language.Haskell.TH (Exp, Q, appE, runQ)
+#if MIN_VERSION_template_haskell(2,12,0)
+import qualified Language.Haskell.TH as TH
+#endif
 import Language.Haskell.TH.Syntax (Quasi(..), lift)
 
 -- $tryQ
@@ -58,7 +68,14 @@ import Language.Haskell.TH.Syntax (Quasi(..), lift)
 -- ref. https://ghc.haskell.org/trac/ghc/ticket/2340
 
 newtype TryQ a = TryQ { unTryQ :: ExceptT () (StateT (Maybe String) Q) a }
-  deriving (Functor, Applicative, Monad, MonadIO)
+  deriving
+    ( Functor
+    , Applicative
+    , Monad
+#if MIN_VERSION_template_haskell(2,13,0)
+    , MonadIO
+#endif
+    )
 
 liftQ :: Q a -> TryQ a
 liftQ = TryQ . Trans.lift . Trans.lift
@@ -82,16 +99,25 @@ instance Quasi TryQ where
   qReifyModule m = liftQ $ qReifyModule m
   qReifyConStrictness name = liftQ $ qReifyConStrictness name
   qLocation = liftQ qLocation
+  qRunIO m = liftQ $ qRunIO m
   qAddDependentFile fp = liftQ $ qAddDependentFile fp
-  qAddTempFile s = liftQ $ qAddTempFile s
   qAddTopDecls decs = liftQ $ qAddTopDecls decs
-  qAddForeignFilePath lang s = liftQ $ qAddForeignFilePath lang s
   qAddModFinalizer q = liftQ $ qAddModFinalizer q
-  qAddCorePlugin s = liftQ $ qAddCorePlugin s
   qGetQ = liftQ qGetQ
   qPutQ x = liftQ $ qPutQ x
   qIsExtEnabled ext = liftQ $ qIsExtEnabled ext
   qExtsEnabled = liftQ qExtsEnabled
+
+#if MIN_VERSION_template_haskell(2,13,0)
+  qAddCorePlugin s = liftQ $ qAddCorePlugin s
+#endif
+
+#if MIN_VERSION_template_haskell(2,14,0)
+  qAddTempFile s = liftQ $ qAddTempFile s
+  qAddForeignFilePath lang s = liftQ $ qAddForeignFilePath lang s
+#elif MIN_VERSION_template_haskell(2,12,0)
+  qAddForeignFile lang s = liftQ $ qAddForeignFile lang s
+#endif
 
 -- | Run the given Template Haskell computation, returning either an error message or the final
 -- result.
@@ -142,4 +168,9 @@ tryQErr' = tryQ' >=> either
 {- Helpers -}
 
 typeAppString :: Q Exp -> Q Exp
-typeAppString expQ = appTypeE expQ [t| String |]
+typeAppString expQ =
+#if MIN_VERSION_template_haskell(2,12,0)
+    TH.appTypeE expQ [t| String |]
+#else
+    expQ
+#endif
