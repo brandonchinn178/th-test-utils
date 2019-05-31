@@ -1,0 +1,5 @@
+statuses:
+- 'ci/circleci: test_ghc_8.0'
+- 'ci/circleci: test_ghc_8.2'
+- 'ci/circleci: test_ghc_8.4'
+- 'ci/circleci: test_ghc_8.6'
