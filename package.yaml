@@ -2,8 +2,8 @@ name: th-test-utils
 version: 0.1.0
 verbatim:
   cabal-version: '>= 1.10'
-# license: BSD3
-# license-file: LICENSE
+license: BSD3
+license-file: LICENSE
 author:
   - Brandon Chinn <brandon@leapyear.io>
 maintainer:
