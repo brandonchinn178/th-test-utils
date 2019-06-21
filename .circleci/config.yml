@@ -54,6 +54,7 @@ jobs:
               package.yaml
             )
             cat "${FILES[@]}" > cache-key.txt
+            curl -sSL https://get.haskellstack.org/ | sed -n 's/^STACK_VERSION="\(.*\)"/\1/p' >> cache-key.txt
 
       # install stack and dependencies
       - run:
