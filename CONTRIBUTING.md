@@ -68,22 +68,7 @@ don't know, ask them to explain what they want you to do.
 1. Make a PR from your fork to this repo
 1. Get the PR reviewed and passing CI
    (see [Code review process](#code-review-process))
-1. After approval, merge PR with merge bot (see below)
-
-## Merge Bot
-
-This repository is using the LeapYear merge bot. It's developed in house, and
-is currently in a private repository. The workflow for using the merge bot is
-fairly straightforward:
-
-1. Create a PR
-1. Go to the "Checks" tab in the PR
-1. Click on "Bot Try" and click the "Run try" button
-    * This will run CI on another branch
-1. Make sure the try run passes before attempting to merge
-1. To queue the PR for merging, click on "Bot Merge" in the "Checks" tab and
-   click the "Queue" button
-    * This requires a reviewer to have approved the PR
+1. After approval, wait for the maintainer to merge your PR
 
 # Reporting issues
 
@@ -118,8 +103,7 @@ be improved (e.g. better examples, more documentation, etc.).
 # Code review process
 
 PRs in this repository need to pass CI and get a passing review from a
-reviewer. See the [Getting started](#getting-started) section for information
-on using the merge bot to pass CI.
+reviewer.
 
 The code maintainers should be notified when a new PR is submitted. They will
 assign the PR to themselves and will review your PR within a reasonable amount
@@ -127,8 +111,8 @@ of time (if they are unable to, they should write a comment explaining when
 they will get back to you). After they submit their review, they will assign
 the PR back to you to address the comments. If they requested changes in the
 PR, fix the changes and re-assign the maintainer after pushing and testing your
-changes. Otherwise, if they approved the PR, use the merge bot to queue your
-PR to be merged into `master`.
+changes. Otherwise, if they approved the PR, simply wait for a maintainer to
+merge the PR into master.
 
 Code reviewers should follow best practices when reviewing PRs:
 * https://mtlynch.io/human-code-reviews-1/

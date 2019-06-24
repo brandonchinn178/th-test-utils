@@ -13,13 +13,6 @@ aliases:
   - &cache_key
     v0-{{ checksum "cache-key.txt" }}
 
-  - &only-merge-bot
-    filters:
-      branches:
-        only:
-          - /trying-.*/
-          - /staging-.*/
-
 executors:
   centos7:
     parameters:
@@ -115,19 +108,15 @@ workflows:
   build_and_test:
     jobs:
       - run_build_and_test:
-          <<: *only-merge-bot
           name: test_ghc_8.6
           stack_yaml: stack-ghc-8.6.yaml
           latest: true
       - run_build_and_test:
-          <<: *only-merge-bot
           name: test_ghc_8.4
           stack_yaml: stack-ghc-8.4.yaml
       - run_build_and_test:
-          <<: *only-merge-bot
           name: test_ghc_8.2
           stack_yaml: stack-ghc-8.2.yaml
       - run_build_and_test:
-          <<: *only-merge-bot
           name: test_ghc_8.0
           stack_yaml: stack-ghc-8.0.yaml
