@@ -92,12 +92,26 @@ jobs:
       - run:
           name: Build
           command: |
-            STACK_ARGS=(--test --no-run-tests)
+            STACK_ARGS=(
+                --test
+                --no-run-tests
+                --ghc-options -Werror
+            )
             if [[ -n "${CI_LATEST}" ]]; then
                 STACK_ARGS+=(--haddock)
             fi
 
             stack build "${STACK_ARGS[@]}"
+
+            if [[ -n "${CI_LATEST}" ]]; then
+              mkdir -p .ci/
+              tar czf .ci/haddock-docs.tar.gz -C "$(find .stack-work/dist -regex '.*/doc/html/[^/]*')" .
+            fi
+      - when:
+          condition: << parameters.latest >>
+          steps:
+            - store_artifacts:
+                path: .ci/
       - run:
           name: Test
           command: stack test
