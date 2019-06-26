@@ -92,7 +92,11 @@ jobs:
       - run:
           name: Build
           command: |
-            STACK_ARGS=(--test --no-run-tests)
+            STACK_ARGS=(
+                --test
+                --no-run-tests
+                --ghc-options -Werror
+            )
             if [[ -n "${CI_LATEST}" ]]; then
                 STACK_ARGS+=(--haddock)
             fi

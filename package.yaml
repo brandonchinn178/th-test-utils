@@ -19,7 +19,7 @@ extra-source-files:
 
 github: LeapYear/th-test-utils
 
-ghc-options: -Wall -Werror
+ghc-options: -Wall
 when:
   - condition: impl(ghc >= 8.0)
     ghc-options:
