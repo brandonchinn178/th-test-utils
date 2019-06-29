@@ -1,5 +1,8 @@
 # th-test-utils
 
+![CircleCI](https://img.shields.io/circleci/build/github/LeapYear/th-test-utils.svg)
+![Hackage](https://img.shields.io/hackage/v/th-test-utils.svg)
+
 This package contains utility functions for testing Template Haskell code.
 
 Currently, this package only exposes a single function, `tryQ` (and derivatives),
