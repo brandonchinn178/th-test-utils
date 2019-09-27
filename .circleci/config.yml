@@ -122,9 +122,14 @@ workflows:
   build_and_test:
     jobs:
       - run_build_and_test:
+          name: test_latest
+          latest: true
+      - run_build_and_test:
+          name: test_ghc_8.8
+          stack_yaml: stack-ghc-8.8.yaml
+      - run_build_and_test:
           name: test_ghc_8.6
           stack_yaml: stack-ghc-8.6.yaml
-          latest: true
       - run_build_and_test:
           name: test_ghc_8.4
           stack_yaml: stack-ghc-8.4.yaml
