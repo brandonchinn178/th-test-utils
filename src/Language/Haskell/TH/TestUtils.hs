@@ -10,10 +10,6 @@ This module defines utilites for testing Template Haskell code.
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE TemplateHaskell #-}
 
-#if MIN_VERSION_base(4,9,0)
-# define HAS_MONADFAIL 1
-#endif
-
 module Language.Haskell.TH.TestUtils
   ( -- * Error recovery
     -- $tryQ
