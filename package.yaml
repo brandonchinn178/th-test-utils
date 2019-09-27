@@ -27,11 +27,13 @@ when:
       - -Wincomplete-record-updates
       - -Wincomplete-uni-patterns
       - -Wnoncanonical-monad-instances
+  - condition: impl(ghc < 8.8)
+    ghc-options:
       - -Wnoncanonical-monadfail-instances
 
 dependencies:
 - base >= 4.9 && < 5
-- template-haskell >= 2.11.1.0 && <2.15
+- template-haskell >= 2.11.1.0 && <2.16
 - transformers >= 0.5.2 && < 0.5.7
 
 library:
