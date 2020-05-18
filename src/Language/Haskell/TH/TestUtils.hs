@@ -115,6 +115,10 @@ instance Quasi TryQ where
   qAddForeignFile lang s = liftQ $ qAddForeignFile lang s
 #endif
 
+#if MIN_VERSION_template_haskell(2,16,0)
+  qReifyType n = liftQ $ qReifyType n
+#endif
+
 -- | Run the given Template Haskell computation, returning either an error message or the final
 -- result.
 tryQ' :: Q a -> Q (Either String a)
