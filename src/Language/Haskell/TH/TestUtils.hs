@@ -7,170 +7,284 @@ Portability :  portable
 This module defines utilites for testing Template Haskell code.
 -}
 {-# LANGUAGE CPP #-}
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE NamedFieldPuns #-}
+{-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE TypeFamilies #-}
 
 module Language.Haskell.TH.TestUtils
-  ( -- * Error recovery
-    -- $tryQ
-    tryQ'
-  , tryQ
-  , tryQErr
-  , tryQErr'
+  ( -- * Configuring TestQ
+    QState(..)
+  , MockedMode(..)
+  , QMode(..)
+  , ReifyInfo(..)
+  , loadNames
+    -- * Running TestQ
+  , runTestQ
+  , runTestQErr
+  , tryTestQ
   ) where
 
-import Control.Monad ((>=>))
-import qualified Control.Monad.Fail as Fail
-#if MIN_VERSION_template_haskell(2,13,0)
-import Control.Monad.IO.Class (MonadIO)
+#if !MIN_VERSION_base(4,13,0)
+import Control.Monad.Fail (MonadFail(..))
 #endif
-import qualified Control.Monad.Trans.Class as Trans
-import Control.Monad.Trans.Except (ExceptT, catchE, runExceptT, throwE)
-import Control.Monad.Trans.State (StateT, put, runStateT)
-import Language.Haskell.TH (Exp, Q, appE, runQ)
-#if MIN_VERSION_template_haskell(2,12,0)
-import qualified Language.Haskell.TH as TH
+import Control.Monad.IO.Class (MonadIO(..))
+import Control.Monad.Trans.Class (lift)
+import qualified Control.Monad.Trans.Except as Except
+import qualified Control.Monad.Trans.Reader as Reader
+import qualified Control.Monad.Trans.State as State
+import Data.Maybe (fromMaybe)
+import Language.Haskell.TH (Name, Q, runIO, runQ)
+import Language.Haskell.TH.Syntax (Quasi(..), mkNameU)
+
+import Language.Haskell.TH.TestUtils.QMode
+import Language.Haskell.TH.TestUtils.QState
+
+runTestQ :: forall mode a. IsMockedMode mode => QState mode -> Q a -> TestQResult mode a
+runTestQ state = fmapResult' (either error id) . tryTestQ state
+  where
+    fmapResult' = fmapResult @mode @(Either String a) @a
+
+runTestQErr :: forall mode a. (IsMockedMode mode, Show a) => QState mode -> Q a -> TestQResult mode String
+runTestQErr state = fmapResult' (either id (error . mkMsg)) . tryTestQ state
+  where
+    fmapResult' = fmapResult @mode @(Either String a) @String
+    mkMsg a = "Unexpected success: " ++ show a
+
+tryTestQ :: forall mode a. IsMockedMode mode => QState mode -> Q a -> TestQResult mode (Either String a)
+tryTestQ state = runResult @mode . runTestQMonad . runQ
+  where
+    runTestQMonad =
+      Except.runExceptT
+      . (`State.evalStateT` initialInternalState)
+      . (`Reader.runReaderT` state)
+      . unTestQ
+
+    initialInternalState = InternalState
+      { lastErrorReport = Nothing
+      , newNameCounter = 0
+      }
+
+data InternalState = InternalState
+  { lastErrorReport :: Maybe String
+  , newNameCounter  :: Int
+  }
+
+newtype TestQ (mode :: MockedMode) a = TestQ
+  { unTestQ
+      :: Reader.ReaderT (QState mode)
+          ( State.StateT InternalState
+              ( Except.ExceptT String
+                  Q
+              )
+          )
+          a
+  } deriving (Functor, Applicative, Monad)
+
+{- TestQ stack: ReaderT -}
+
+getState :: TestQ mode (QState mode)
+getState = TestQ Reader.ask
+
+getMode :: TestQ mode (QMode mode)
+getMode = mode <$> getState
+
+lookupReifyInfo :: (ReifyInfo -> a) -> Name -> TestQ mode a
+lookupReifyInfo f name = do
+  QState{reifyInfo} <- getState
+  case lookup name reifyInfo of
+    Just info -> return $ f info
+    Nothing -> error $ "Cannot reify " ++ show name ++ " (did you mean to add it to reifyInfo?)"
+
+{- TestQ stack: StateT -}
+
+getLastError :: TestQ mode (Maybe String)
+getLastError = TestQ . lift $ State.gets lastErrorReport
+
+storeLastError :: String -> TestQ mode ()
+storeLastError msg = TestQ . lift $ State.modify (\state -> state { lastErrorReport = Just msg })
+
+getAndIncrementNewNameCounter :: TestQ mode Int
+getAndIncrementNewNameCounter = TestQ . lift $ State.state $ \state ->
+  let n = newNameCounter state
+  in (n, state { newNameCounter = n + 1 })
+
+{- TestQ stack: ExceptT -}
+
+throwError :: String -> TestQ mode a
+throwError = TestQ . lift . lift . Except.throwE
+
+catchError :: TestQ mode a -> (String -> TestQ mode a) -> TestQ mode a
+catchError (TestQ action) handler = TestQ $ catchE' action (unTestQ . handler)
+  where
+    catchE' = Reader.liftCatch (State.liftCatch Except.catchE)
+
+{- TestQ stack: Q -}
+
+liftQ :: Q a -> TestQ mode a
+liftQ = TestQ . lift . lift . lift
+
+{- Instances -}
+
+instance MonadIO (TestQ mode) where
+  liftIO = liftQ . runIO
+
+instance MonadFail (TestQ mode) where
+  fail msg = do
+    -- The implementation of 'fail' for Q will send the message to qReport before calling 'fail'.
+    -- Check to see if qReport put any message in the state and throw that message if so.
+    lastMessage <- getLastError
+    throwError $ fromMaybe msg lastMessage
+
+-- | A helper to override Quasi methods when mocked and passthrough when not.
+use :: Override mode a -> TestQ mode a
+use Override{..} = do
+  mode <- getMode
+  case (mode, whenMocked) of
+    (AllowQ, _)            -> liftQ whenAllowed
+    (_, DoInstead testQ)   -> testQ
+    (_, Unsupported label) -> error $ "Cannot run '" ++ label ++ "' with TestQ"
+
+data Override mode a = Override
+  { whenAllowed :: Q a
+  , whenMocked  :: WhenMocked mode a
+  }
+
+data WhenMocked mode a
+  = DoInstead (TestQ mode a)
+  | Unsupported String
+
+instance Quasi (TestQ mode) where
+  {- IO -}
+
+  qRunIO io = getMode >>= \case
+    MockQ -> error "IO actions not allowed"
+    _ -> liftIO io
+
+  {- Error handling + reporting -}
+
+  qRecover handler action = action `catchError` const handler
+
+  qReport False msg = use Override
+    { whenAllowed = qReport False msg
+    , whenMocked = DoInstead $ return ()
+    }
+  qReport True msg = storeLastError msg
+
+  {- Names -}
+
+  qNewName name = use Override
+    { whenAllowed = qNewName name
+    , whenMocked = DoInstead $ mkNameU name . fromIntegral <$> getAndIncrementNewNameCounter
+    }
+
+  qLookupName b name = use Override
+    { whenAllowed = qLookupName b name
+    , whenMocked = DoInstead $ do
+        QState{knownNames} <- getState
+        return $ lookup name knownNames
+    }
+
+  {- ReifyInfo -}
+
+  qReify name = use Override
+    { whenAllowed = qReify name
+    , whenMocked = DoInstead $ lookupReifyInfo reifyInfoInfo name
+    }
+
+  qReifyFixity name = use Override
+    { whenAllowed = qReifyFixity name
+    , whenMocked = DoInstead $ lookupReifyInfo reifyInfoFixity name
+    }
+
+  qReifyRoles name = use Override
+    { whenAllowed = qReifyRoles name
+    , whenMocked = DoInstead $ lookupReifyInfo reifyInfoRoles name >>= \case
+        Nothing -> Prelude.fail $ "No roles associated with Identifier " ++ show name
+        Just roles -> return roles
+    }
+
+#if MIN_VERSION_template_haskell(2,16,0)
+  qReifyType name = use Override
+    { whenAllowed = qReifyType name
+    , whenMocked = DoInstead $ lookupReifyInfo reifyInfoType name
+    }
 #endif
-import Language.Haskell.TH.Syntax (Quasi(..), lift)
 
--- $tryQ
---
--- Unfortunately, there is no built-in way to get an error message of a Template Haskell
--- computation, since 'Language.Haskell.TH.recover' throws away the error message. If
--- 'Language.Haskell.TH.recover' was defined differently, we could maybe do:
---
--- > recover' :: (String -> Q a) -> Q a -> Q a
--- >
--- > spliceFail :: Q Exp
--- > spliceFail = fail "This splice fails"
--- >
--- > spliceInt :: Q Exp
--- > spliceInt = [| 1 |]
--- >
--- > test1 :: Either String Int
--- > test1 = $(recover' (pure . Left) $ Right <$> spliceFail) -- generates `Left "This splice fails"`
--- >
--- > test2 :: Either String Int
--- > test2 = $(recover' (pure . Left) $ Right <$> spliceInt) -- generates `Right 1`
---
--- But for now, we'll have to use 'tryQ':
---
--- > test1 :: Either String Int
--- > test1 = $(tryQ spliceFail) -- generates `Left "This splice fails"`
--- >
--- > test2 :: Either String Int
--- > test2 = $(tryQ spliceInt) -- generates `Right 1`
---
--- ref. https://ghc.haskell.org/trac/ghc/ticket/2340
+  {- Currently unsupported -}
 
-newtype TryQ a = TryQ { unTryQ :: ExceptT () (StateT (Maybe String) Q) a }
-  deriving
-    ( Functor
-    , Applicative
-    , Monad
-#if MIN_VERSION_template_haskell(2,13,0)
-    , MonadIO
-#endif
-    )
-
-liftQ :: Q a -> TryQ a
-liftQ = TryQ . Trans.lift . Trans.lift
-
-instance Fail.MonadFail TryQ where
-  fail _ = TryQ $ throwE ()
-
-instance Quasi TryQ where
-  qNewName name = liftQ $ qNewName name
-
-  qReport False msg = liftQ $ qReport False msg
-  qReport True msg = TryQ . Trans.lift . put $ Just msg
-
-  qRecover (TryQ handler) (TryQ action) = TryQ $ catchE action (const handler)
-  qLookupName b name = liftQ $ qLookupName b name
-  qReify name = liftQ $ qReify name
-  qReifyFixity name = liftQ $ qReifyFixity name
-  qReifyInstances name types = liftQ $ qReifyInstances name types
-  qReifyRoles name = liftQ $ qReifyRoles name
-  qReifyAnnotations ann = liftQ $ qReifyAnnotations ann
-  qReifyModule m = liftQ $ qReifyModule m
-  qReifyConStrictness name = liftQ $ qReifyConStrictness name
-  qLocation = liftQ qLocation
-  qRunIO m = liftQ $ qRunIO m
-  qAddDependentFile fp = liftQ $ qAddDependentFile fp
-  qAddTopDecls decs = liftQ $ qAddTopDecls decs
-  qAddModFinalizer q = liftQ $ qAddModFinalizer q
-  qGetQ = liftQ qGetQ
-  qPutQ x = liftQ $ qPutQ x
-  qIsExtEnabled ext = liftQ $ qIsExtEnabled ext
-  qExtsEnabled = liftQ qExtsEnabled
+  qReifyInstances name types = use Override
+    { whenAllowed = qReifyInstances name types
+    , whenMocked = Unsupported "qReifyInstances"
+    }
+  qReifyAnnotations annlookup = use Override
+    { whenAllowed = qReifyAnnotations annlookup
+    , whenMocked = Unsupported "qReifyAnnotations"
+    }
+  qReifyModule mod' = use Override
+    { whenAllowed = qReifyModule mod'
+    , whenMocked = Unsupported "qReifyModule"
+    }
+  qReifyConStrictness name = use Override
+    { whenAllowed = qReifyConStrictness name
+    , whenMocked = Unsupported "qReifyConStrictness"
+    }
+  qLocation = use Override
+    { whenAllowed = qLocation
+    , whenMocked = Unsupported "qLocation"
+    }
+  qAddDependentFile fp = use Override
+    { whenAllowed = qAddDependentFile fp
+    , whenMocked = Unsupported "qAddDependentFile"
+    }
+  qAddTopDecls decls = use Override
+    { whenAllowed = qAddTopDecls decls
+    , whenMocked = Unsupported "qAddTopDecls"
+    }
+  qAddModFinalizer q = use Override
+    { whenAllowed = qAddModFinalizer q
+    , whenMocked = Unsupported "qAddModFinalizer"
+    }
+  qGetQ = use Override
+    { whenAllowed = qGetQ
+    , whenMocked = Unsupported "qGetQ"
+    }
+  qPutQ a = use Override
+    { whenAllowed = qPutQ a
+    , whenMocked = Unsupported "qPutQ"
+    }
+  qIsExtEnabled ext = use Override
+    { whenAllowed = qIsExtEnabled ext
+    , whenMocked = Unsupported "qIsExtEnabled"
+    }
+  qExtsEnabled = use Override
+    { whenAllowed = qExtsEnabled
+    , whenMocked = Unsupported "qExtsEnabled"
+    }
 
 #if MIN_VERSION_template_haskell(2,13,0)
-  qAddCorePlugin s = liftQ $ qAddCorePlugin s
+  qAddCorePlugin plugin = use Override
+    { whenAllowed = qAddCorePlugin plugin
+    , whenMocked = Unsupported "qAddCorePlugin"
+    }
 #endif
 
 #if MIN_VERSION_template_haskell(2,14,0)
-  qAddTempFile s = liftQ $ qAddTempFile s
-  qAddForeignFilePath lang s = liftQ $ qAddForeignFilePath lang s
+  qAddTempFile suffix = use Override
+    { whenAllowed = qAddTempFile suffix
+    , whenMocked = Unsupported "qAddTempFile"
+    }
+  qAddForeignFilePath lang fp = use Override
+    { whenAllowed = qAddForeignFilePath lang fp
+    , whenMocked = Unsupported "qAddForeignFilePath"
+    }
 #elif MIN_VERSION_template_haskell(2,12,0)
-  qAddForeignFile lang s = liftQ $ qAddForeignFile lang s
-#endif
-
-#if MIN_VERSION_template_haskell(2,16,0)
-  qReifyType n = liftQ $ qReifyType n
-#endif
-
--- | Run the given Template Haskell computation, returning either an error message or the final
--- result.
-tryQ' :: Q a -> Q (Either String a)
-tryQ' = fmap cast . (`runStateT` Nothing) . runExceptT . unTryQ . runQ
-  where
-    cast (Left (), Nothing) = Left "Q monad failure"
-    cast (Left (), Just msg) = Left msg
-    cast (Right a, _) = Right a
-
--- | Run the given Template Haskell computation, returning a splicable expression that resolves
--- to 'Left' the error message or 'Right' the final result.
---
--- > -- Left "This splice fails"
--- > $(tryQ spliceFail) :: Either String Int
--- >
--- > -- Right 1
--- > $(tryQ spliceInt) :: Either String Int
-tryQ :: Q Exp -> Q Exp
-tryQ = tryQ' >=> either
-  (appE (typeAppString [| Left |]) . lift)
-  (appE (typeAppString [| Right |]) . pure)
-
--- | 'tryQ', except returns 'Just' the error message or 'Nothing' if the computation succeeded.
---
--- > -- Just "This splice fails"
--- > $(tryQErr spliceFail) :: Maybe String
--- >
--- > -- Nothing
--- > $(tryQErr spliceInt) :: Maybe String
-tryQErr :: Q a -> Q Exp
-tryQErr = tryQ' >=> either
-  (appE (typeAppString [| Just |]) . lift)
-  (const (typeAppString [| Nothing |]))
-
--- | 'tryQ', except returns the error message or fails if the computation succeeded.
---
--- > -- "This splice fails"
--- > $(tryQErr' spliceFail) :: String
--- >
--- > -- compile time error: "Q monad unexpectedly succeeded"
--- > $(tryQErr' spliceInt) :: String
-tryQErr' :: Q a -> Q Exp
-tryQErr' = tryQ' >=> either
-  lift
-  (const $ fail "Q monad unexpectedly succeeded")
-
-{- Helpers -}
-
-typeAppString :: Q Exp -> Q Exp
-typeAppString expQ =
-#if MIN_VERSION_template_haskell(2,12,0)
-    TH.appTypeE expQ [t| String |]
-#else
-    expQ
+  qAddForeignFile lang fp = use Override
+    { whenAllowed = qAddForeignFile lang fp
+    , whenMocked = Unsupported "qAddForeignFile"
+    }
 #endif
