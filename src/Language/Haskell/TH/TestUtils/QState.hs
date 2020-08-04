@@ -9,6 +9,7 @@ module Language.Haskell.TH.TestUtils.QState
   ( QState(..)
   , ReifyInfo(..)
   , loadNames
+  , unmockedState
   ) where
 
 import Language.Haskell.TH
@@ -18,7 +19,7 @@ import Language.Haskell.TH.Syntax (Lift)
 import qualified Language.Haskell.TH.Syntax as TH
 #endif
 
-import Language.Haskell.TH.TestUtils.QMode (MockedMode, QMode)
+import Language.Haskell.TH.TestUtils.QMode (MockedMode(..), QMode(..))
 
 -- | State information for mocking Q functionality.
 data QState (mode :: MockedMode) = QState
@@ -55,3 +56,11 @@ loadNames names = listE $ flip map names $ \name -> do
 #endif
 
   [| (name, ReifyInfo info fixity roles $infoType) |]
+
+-- | A shortcut for defining an unmocked Q.
+unmockedState :: QState 'NotMocked
+unmockedState = QState
+  { mode = AllowQ
+  , knownNames = []
+  , reifyInfo = []
+  }

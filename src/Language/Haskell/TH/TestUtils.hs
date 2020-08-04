@@ -23,6 +23,7 @@ module Language.Haskell.TH.TestUtils
   , QMode(..)
   , ReifyInfo(..)
   , loadNames
+  , unmockedState
     -- * Running TestQ
   , runTestQ
   , runTestQErr
