@@ -3,42 +3,48 @@
 ![CircleCI](https://img.shields.io/circleci/build/github/LeapYear/th-test-utils.svg)
 ![Hackage](https://img.shields.io/hackage/v/th-test-utils.svg)
 
-This package contains utility functions for testing Template Haskell code.
-
-Currently, this package only exposes a single function, `tryQ` (and derivatives),
-that allows testing whether a given Template Haskell expression fails.
+This package implements `tryTestQ` and related helpers in order to better test Template Haskell code. It supports returning the actual error message that [`recover` doesn't currently return](https://gitlab.haskell.org/ghc/ghc/-/issues/2340) as well as mocking out `Q` actions, so that you can run Template Haskell code at runtime.
 
 ## Usage
 
 ```haskell
--- e.g. $(qConcat ["hello", "world"]) generates "helloworld" at compile time
-qConcat :: [String] -> Q Exp
-qConcat [] = fail "Cannot concat empty list"
-qConcat xs = ...
-
--- e.g. [numberify| one |] generates `1` at compile time
-numberify :: QuasiQuoter
-numberify = ...
+-- e.g. $(showInfo "Bool") generates a string corresponding
+-- to the reify `Info` for `Bool`.
+showInfo :: String -> Q Exp
+showInfo s = do
+  mName <- lookupTypeName s
+  case mName of
+    Nothing -> fail $ "Unknown type: " ++ s
+    Just name -> do
+      info <- reify name
+      lift $ show info
 ```
 
 ```haskell
 -- example using tasty-hunit
 main :: IO ()
 main = defaultMain $ testGroup "my-project"
-  [ testCase "qConcat 1" $
-      $(tryQ $ qConcat ["hello", "world"]) @?= (Right "helloworld" :: Either String String)
-  , testCase "qConcat 2" $
-      $(tryQ $ qConcat [])                 @?= (Left "Cannot concat empty list" :: Either String String)
-  , testCase "numberify 1" $
-      $(tryQ $ quoteExp numberify "one")   @?= (Right 1 :: Either String Int)
-  , testCase "numberify 2" $
-      $(tryQ $ quoteExp numberify "foo")   @?= (Left "not a number" :: Either String Int)
+  [ testCase "showInfo unmocked" $(do
+      result1 <- tryTestQ unmockedState $ showInfo "Bool"
+      runIO $ isRight result1 @? ("Unexpected error: " ++ show result1)
 
-  -- can also return error message as `Maybe String` or `String` (which errors
-  -- if the function doesn't error)
-  , testCase "numberify 3" $
-      $(tryQErr $ quoteExp numberify "foo") @?= Just "not a number"
-  , testCase "numberify 4" $
-      $(tryQErr' $ quoteExp numberify "foo") @?= "not a number"
+      result2 <- tryTestQ unmockedState $ showInfo "Foo"
+      runIO $ result2 @?= Left "Unknown type: Foo"
+
+      [| return () |]
+    )
+
+  , testCase "showInfo mocked success" $ do
+      let state = QState
+            { mode = MockQ
+            , knownNames = [("Bool", ''Bool)]
+            , reifyInfo = $(loadNames [''Bool])
+            }
+
+      let result1 = tryTestQ state $ showInfo "Bool"
+      isRight result1 @? ("Unexpected error: " ++ show result1)
+
+      let result2 = tryTestQ state $ showInfo "Foo"
+      result2 @?= Left "Unknown type: Foo"
   ]
 ```
