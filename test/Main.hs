@@ -1,14 +1,20 @@
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TypeApplications #-}
 
+import Control.Monad (join)
+#if MIN_VERSION_template_haskell(2,13,0)
+import Control.Monad.IO.Class (liftIO)
+#endif
 import Data.ByteString.Lazy (ByteString)
 import qualified Data.ByteString.Lazy.Char8 as Char8
 import Data.List (intercalate)
-import Language.Haskell.TH (AnnLookup(..), Q, Type(..))
+import Language.Haskell.TH (AnnLookup(..), Q, Type(..), runIO)
 import Language.Haskell.TH.Syntax (Extension(..), Quasi(..))
 #if MIN_VERSION_template_haskell(2,12,0)
 import Language.Haskell.TH.Syntax (ForeignSrcLang(..))
@@ -18,6 +24,7 @@ import Test.Tasty.Golden
 import Test.Tasty.HUnit
 
 import Language.Haskell.TH.TestUtils
+import Language.Haskell.TH.TestUtils.QMode (IsMockedMode, TestQResult)
 import TestLib
 import TH
 
@@ -25,6 +32,7 @@ main :: IO ()
 main = defaultMain $ testGroup "th-test-utils"
   [ testAllowQ
   , testMockQ
+  , testMockQAllowIO
   ]
 
 testAllowQ :: TestTree
@@ -159,77 +167,109 @@ testAllowQ = testGroup "AllowQ"
       ]
 
 testMockQ :: TestTree
-testMockQ = testGroup "MockQ"
+testMockQ = testMockQ' MockQTests
+  { qMode = MockQ
+  , toIO = pure
+  , qRunIOResult = \_ -> Left "IO actions not allowed"
+  }
+
+testMockQAllowIO :: TestTree
+testMockQAllowIO = testMockQ' MockQTests
+  { qMode = MockQAllowIO
+  , toIO = id
+  , qRunIOResult = Right
+  }
+
+{- Helpers -}
+
+data MockQTests mode = MockQTests
+  { qMode        :: QMode mode
+  , toIO         :: forall a. TestQResult mode a -> IO a
+  , qRunIOResult :: forall a. a -> Either String a
+  }
+
+-- | Tests for both MockQ and MockQAllowIO, since they should behave exactly the same except for qRunIO.
+testMockQ' :: forall mode. IsMockedMode mode => MockQTests mode -> TestTree
+testMockQ' MockQTests{..} = testGroup (show qMode)
   [ testRunners
   , testMethods
   ]
   where
     mockedState = QState
-      { mode = MockQ
+      { mode = qMode
       , knownNames = []
       , reifyInfo = []
       }
 
-    -- Call runTestQ, ensuring that the result is evaluated
-    runTestQ' :: QState 'FullyMocked -> Q a -> IO a
-    runTestQ' state = forceM . pure . runTestQ state
+    -- Call runTestQ, converting the result to IO and ensuring that the result is evaluated
+    runTestQ' :: QState mode -> Q a -> IO a
+    runTestQ' state = forceM . toIO . runTestQ state
 
-    runTestQWithErrors :: QState 'FullyMocked -> Q a -> IO (Either String a)
+    -- Call runTestQ', capturing any 'error' calls that occur in evaluating the result
+    runTestQWithErrors :: QState mode -> Q a -> IO (Either String a)
     runTestQWithErrors state = tryIO . runTestQ' state
 
     testRunners = testGroup "tryTestQ, runTestQ, runTestQErr"
       [ testCase "tryTestQ - success" $ do
           let x = 1
-              result = tryTestQ mockedState (return x :: Q Int)
-          result @?= Right x
+          result <- toIO $ tryTestQ mockedState (return x :: Q Int)
+          (result :: Either String Int) @?= Right x
       , testCase "tryTestQ - error" $ do
           let msg = "Error message"
-              result = tryTestQ mockedState (fail msg :: Q Int)
-          result @?= Left msg
+          result <- toIO $ tryTestQ mockedState (fail msg :: Q Int)
+          (result :: Either String Int) @?= Left msg
       , testCase "Right . runTestQ === tryTestQ" $ do
-          let actual = Right $ runTestQ mockedState basicSuccess
-              expected = tryTestQ mockedState basicSuccess
-          actual @?= expected
+          actual <- fmap Right $ toIO $ runTestQ mockedState basicSuccess
+          expected <- toIO $ tryTestQ mockedState basicSuccess
+          (actual :: Either String String) @?= (expected :: Either String String)
       , testCase "runTestQ errors on failure" $ do
           let msg = "Error message"
-          result <- tryIO $ forceM $ pure $ runTestQ mockedState (fail msg :: Q ())
-          result @?= Left msg
+          result <- tryIO $ forceM $ toIO $ runTestQ mockedState (fail msg :: Q ())
+          (result :: Either String ()) @?= Left msg
       , testCase "Left . runTestQErr === tryTestQ" $ do
-          let actual = Left $ runTestQErr mockedState basicFailure
-              expected = tryTestQ mockedState basicFailure
-          actual @?= expected
+          actual <- fmap Left $ toIO $ runTestQErr mockedState basicFailure
+          expected <- toIO $ tryTestQ mockedState basicFailure
+          (actual :: Either String String) @?= (expected :: Either String String)
       , testCase "runTestQErr errors on success" $ do
-          result <- tryIO $ forceM $ pure $ runTestQErr mockedState (return 1 :: Q Int)
-          result @?= Left "Unexpected success: 1"
+          result <- tryIO $ forceM $ toIO $ runTestQErr mockedState (return 1 :: Q Int)
+          (result :: Either String String) @?= Left "Unexpected success: 1"
       ]
 
     testMethods = testGroup "Quasi methods"
       [ golden "qNewName" $
-          labelled $ runTestQ mockedState $ do
+          join $ runTestQ' mockedState $ do
             name1 <- qNewName "foo"
             name2 <- qNewName "foo"
             name3 <- qNewName "bar"
-            return
+            return $ labelled
               [ ("Name 1", pure name1)
               , ("Name 2", pure name2)
               , ("Name 3", pure name3)
               ]
       , testCase "qReport" $ do
-          let warningResult = runTestQ mockedState $ qReport False "A warning message"
+          warningResult <- runTestQ' mockedState $ qReport False "A warning message"
           warningResult @?= ()
 
-          let errorResult = runTestQ mockedState $ qReport True "An error message"
+          errorResult <- runTestQ' mockedState $ qReport True "An error message"
           errorResult @?= ()
       , testCase "qRecover" $ do
           let x = "Success"
-              result = runTestQ mockedState $ qRecover (return x) basicFailure
+          result <- runTestQ' mockedState $ qRecover (return x) basicFailure
           result @?= x
       , testCase "qLookupName" $ do
           let state = mockedState { knownNames = [("Show", ''Show), ("Right", 'Right)] }
-          runTestQ state (qLookupName True "Show") @?= Just ''Show
-          runTestQ state (qLookupName True "Eq") @?= Nothing
-          runTestQ state (qLookupName False "Right") @?= Just 'Right
-          runTestQ state (qLookupName False "Left") @?= Nothing
+
+          nameShow <- runTestQ' state $ qLookupName True "Show"
+          nameShow @?= Just ''Show
+
+          nameEq <- runTestQ' state $ qLookupName True "Eq"
+          nameEq @?= Nothing
+
+          nameRight <- runTestQ' state $ qLookupName False "Right"
+          nameRight @?= Just 'Right
+
+          nameLeft <- runTestQ' state $ qLookupName False "Left"
+          nameLeft @?= Nothing
       , golden "qReify" $ do
           let state = mockedState { reifyInfo = $(loadNames ['putStrLn]) }
           labelled
@@ -268,10 +308,20 @@ testMockQ = testGroup "MockQ"
           runUnsupported mockedState $ qReifyConStrictness 'Just
       , golden "qLocation" $
           runUnsupported mockedState qLocation
-      , golden "qRunIO" $
-          labelled
-            [ ("Disallowed", runTestQWithErrors mockedState $ qRunIO $ putStrLn "Hello world")
-            ]
+      , testCase "qRunIO" $ do
+          let x = 1 :: Int
+              io = return x
+
+          qRunIOResult' <- runTestQWithErrors mockedState $ qRunIO io
+          qRunIOResult' @?= qRunIOResult x
+
+          runIOResult <- runTestQWithErrors mockedState $ runIO io
+          runIOResult @?= qRunIOResult x
+
+#if MIN_VERSION_template_haskell(2,13,0)
+          liftIOResult <- runTestQWithErrors mockedState $ liftIO io
+          liftIOResult @?= qRunIOResult x
+#endif
       , golden "qAddDependentFile" $
           runUnsupported mockedState $ qAddDependentFile "README.md"
       , golden "qAddTopDecls" $
@@ -301,6 +351,7 @@ testMockQ = testGroup "MockQ"
           runUnsupported mockedState qExtsEnabled
       ]
 
+    -- force both MockQ and MockQAllowIO to resolve the same goldens
     golden name = goldenVsString name ("test/goldens/MockQ_" ++ name ++ ".golden")
 
     labelled :: Show a => [(String, IO a)] -> IO ByteString
@@ -310,5 +361,5 @@ testMockQ = testGroup "MockQ"
             return $ label ++ ": " ++ show val
       Char8.pack . intercalate "\n" . map (++ "\n") <$> mapM mkLine vals
 
-    runUnsupported :: Show a => QState 'FullyMocked -> Q a -> IO ByteString
+    runUnsupported :: Show a => QState mode -> Q a -> IO ByteString
     runUnsupported state q = labelled [("Unsupported", runTestQWithErrors state q)]
