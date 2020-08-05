@@ -205,7 +205,7 @@ instance Quasi (TestQ mode) where
   qReifyRoles name = use Override
     { whenAllowed = qReifyRoles name
     , whenMocked = DoInstead $ lookupReifyInfo reifyInfoRoles name >>= \case
-        Nothing -> Prelude.fail $ "No roles associated with Identifier " ++ show name
+        Nothing -> error $ "No roles associated with " ++ show name
         Just roles -> return roles
     }
 

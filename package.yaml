@@ -45,6 +45,8 @@ tests:
     source-dirs:  test
     main:         Main.hs
     dependencies:
+      - bytestring
       - tasty
+      - tasty-golden
       - tasty-hunit
       - th-test-utils

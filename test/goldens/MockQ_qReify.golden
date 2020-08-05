@@ -1,0 +1,3 @@
+Found: Right (VarI System.IO.putStrLn (AppT (AppT ArrowT (ConT GHC.Base.String)) (AppT (ConT GHC.Types.IO) (TupleT 0))) Nothing)
+
+Missing: Left "Cannot reify GHC.Show.Show (did you mean to add it to reifyInfo?)"

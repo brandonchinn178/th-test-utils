@@ -1,0 +1,3 @@
+Found: Right (Just (Fixity 0 InfixR))
+
+Missing: Left "Cannot reify GHC.Num.+ (did you mean to add it to reifyInfo?)"
