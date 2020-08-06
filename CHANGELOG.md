@@ -1,5 +1,16 @@
 ## Upcoming
 
+* Rewrite with `runTestQ`, allowing for both recoverable `Q` actions and mocked `Q` actions in `IO`.
+
+    The previous `tryQ'` function can be reimplemented as:
+
+    ```hs
+    tryQ' :: Q a -> Q (Either String a)
+    tryQ' = tryTestQ unmockedState
+    ```
+
+    with the other helpers defined as before, using `tryQ'`.
+
 ## 1.0.2
 
 * Support GHC 8.10

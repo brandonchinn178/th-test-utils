@@ -1,30 +1,54 @@
-{-# LANGUAGE CPP #-}
-{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE TypeApplications #-}
 
 module TH where
 
+import Control.Exception (SomeException, displayException, try)
+import Data.Bifunctor (first)
 import Language.Haskell.TH
-import Language.Haskell.TH.Syntax (lift)
+import Language.Haskell.TH.Syntax (Module(..))
+import Test.Tasty.HUnit (Assertion, testCase, (@?=))
 
-firstConstrForType :: String -> ExpQ
-firstConstrForType typeName = lookupTypeName typeName >>= \case
-  Nothing -> fail $ "Type does not exist: " ++ typeName
-  Just name -> reify name >>= \case
-#if MIN_VERSION_template_haskell(2,11,0)
-    TyConI (DataD _ _ _ _ cons _) -> firstConstr cons
-    TyConI (NewtypeD _ _ _ _ con _) -> firstConstr [con]
-#else
-    TyConI (DataD _ _ _ cons _) -> firstConstr cons
-    TyConI (NewtypeD _ _ _ con _) -> firstConstr [con]
-#endif
-    _ -> fail $ "Not a data type: " ++ typeName
+import Language.Haskell.TH.TestUtils (runTestQ, unmockedState)
+
+-- | Run an HUnit assertion in a Template Haskell splice.
+testCaseTH :: String -> Q Assertion -> ExpQ
+testCaseTH testName q = do
+  q >>= runIO
+  [| testCase testName $ return () |]
+
+-- | Check that the given action evalutes.
+isSuccess :: Q a -> Q Assertion
+isSuccess action = do
+  _ <- forceM action
+  return $ return ()
+
+-- | Check that the given action results in the same thing in both Q and unmocked TestQ.
+checkUnmockedMatches :: (Eq a, Show a) => Q a -> Q Assertion
+checkUnmockedMatches action = do
+  expected <- action
+  actual <- runTestQ unmockedState action
+  return $ actual @?= expected
+
+-- | Capture any 'error' calls.
+tryIO :: IO a -> IO (Either String a)
+tryIO m = first showError <$> try m
   where
-    firstConstr [] = fail $ "Data type has no constructors: " ++ typeName
-    firstConstr (c:_) = lift . nameBase =<< case c of
-      NormalC name _ -> pure name
-      RecC name _ -> pure name
-      _ -> fail $ "Weird constructor: " ++ typeName
+    -- strip out call stack
+    showError = head . lines . displayException @SomeException
 
-explode :: String -> ExpQ
-explode [] = fail "Cannot explode empty string"
-explode xs = listE $ map (litE . stringL . (:[])) xs
+-- | Same as tryIO, except in the Q monad.
+tryQ :: Q a -> Q (Either String a)
+tryQ q = runIO . tryIO . forceM . pure =<< q
+
+-- | Force the evaluation of @a@ when the monadic action is evaluated.
+forceM :: Monad m => m a -> m a
+forceM m = do
+  a <- m
+  a `seq` return a
+
+thisModule :: ExpQ
+thisModule = do
+  Module pkgName modName <- Language.Haskell.TH.thisModule
+  -- if only Module had a Lift instance
+  [| Module pkgName modName |]
