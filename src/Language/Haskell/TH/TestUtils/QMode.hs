@@ -45,12 +45,10 @@ data QMode (mode :: MockedMode) where
   MockQ        :: QMode 'FullyMocked
 
   -- | Same as MockQ, except IO actions are passed through.
-  --
   -- Useful if your TH code, for example, reads files with runIO.
   MockQAllowIO :: QMode 'FullyMockedWithIO
 
   -- | No mocking is done.
-  --
   -- Useful for running Q as normal, but you need to get error messages.
   AllowQ       :: QMode 'NotMocked
 
