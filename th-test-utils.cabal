@@ -4,10 +4,10 @@ cabal-version: >= 1.10
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 2d804349e3e68793a5e354418bb68ea2ef72a699c55402f4275dcb9093017dcf
+-- hash: 2ec6fa51cea97a219a17187389530388c5e93cfe52e0ae659b249dbb68a5171b
 
 name:           th-test-utils
-version:        1.0.2
+version:        1.1.0
 synopsis:       Utility functions for testing Template Haskell code
 description:    Utility functions for testing Template Haskell code, including
                 functions for testing failures in the Q monad.

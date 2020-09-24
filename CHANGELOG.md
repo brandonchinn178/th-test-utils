@@ -1,5 +1,7 @@
 ## Upcoming
 
+## 1.1.0
+
 * Rewrite with `runTestQ`, allowing for both recoverable `Q` actions and mocked `Q` actions in `IO`.
 
     The previous `tryQ'` function can be reimplemented as:
