@@ -64,9 +64,6 @@ jobs:
           name: Build external dependencies
           command: |
             STACK_ARGS=(--test --only-dependencies)
-            if [[ -n "${CI_LATEST}" ]]; then
-                STACK_ARGS+=(--haddock)
-            fi
 
             stack build "${STACK_ARGS[@]}"
 
@@ -88,7 +85,6 @@ jobs:
             STACK_ARGS=(
                 --test
                 --no-run-tests
-                --ghc-options -Werror
             )
             if [[ -n "${CI_LATEST}" ]]; then
                 STACK_ARGS+=(--coverage)
@@ -136,7 +132,7 @@ jobs:
           steps:
             - run:
                 name: Build haddock
-                command: stack build --haddock
+                command: stack haddock --no-haddock-deps
             - run:
                 name: Bundle haddock docs
                 command: |
