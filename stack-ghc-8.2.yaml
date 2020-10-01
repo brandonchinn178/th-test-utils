@@ -1,7 +1,4 @@
 resolver: lts-11.22
 
-packages:
-  - .
-
 ghc-options:
   '$locals': -Werror
