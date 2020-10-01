@@ -2,3 +2,6 @@ resolver: lts-9.21
 
 packages:
   - .
+
+ghc-options:
+  '$locals': -Werror
