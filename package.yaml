@@ -34,7 +34,7 @@ when:
 dependencies:
 - base >= 4.9 && < 5
 - template-haskell >= 2.11.1.0 && <2.17
-- th-orphans >= 0.13.4 && <0.13.11
+- th-orphans >= 0.13.4 && <0.13.12
 - transformers >= 0.5.2 && < 0.5.7
 
 library:
