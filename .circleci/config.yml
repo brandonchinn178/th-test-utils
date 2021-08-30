@@ -65,11 +65,11 @@ jobs:
           command: |
             STACK_ARGS=(--test --only-dependencies)
 
-            stack build "${STACK_ARGS[@]}"
+            stack build -j1 "${STACK_ARGS[@]}"
 
             # build hlint/stylish-haskell for cache
             if [[ -n "${CI_LATEST}" ]]; then
-                stack build hlint stylish-haskell
+                stack build -j1 hlint stylish-haskell
                 stack install hpc-lcov --local-bin-path /usr/local/bin
             fi
       - save_cache:
