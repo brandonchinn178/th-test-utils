@@ -1,10 +1,8 @@
 cabal-version: >= 1.10
 
--- This file has been generated from package.yaml by hpack version 0.33.0.
+-- This file has been generated from package.yaml by hpack version 0.34.4.
 --
 -- see: https://github.com/sol/hpack
---
--- hash: 431a44c9404cbd67ce994b3c41fe9cdc5474dfa2afeeef36f3bd8106923429de
 
 name:           th-test-utils
 version:        1.1.0
@@ -40,8 +38,8 @@ library
   build-depends:
       base >=4.9 && <5
     , template-haskell >=2.11.1.0 && <2.18
-    , th-orphans >=0.13.4 && <0.13.12
-    , transformers >=0.5.2 && <0.5.7
+    , th-orphans >=0.13.4 && <0.14
+    , transformers >=0.5.2 && <0.6
   if impl(ghc >= 8.0)
     ghc-options: -Wcompat -Wincomplete-record-updates -Wincomplete-uni-patterns -Wnoncanonical-monad-instances
   if impl(ghc < 8.8)
@@ -65,9 +63,9 @@ test-suite th-test-utils-test
     , tasty-golden
     , tasty-hunit
     , template-haskell >=2.11.1.0 && <2.18
-    , th-orphans >=0.13.4 && <0.13.12
+    , th-orphans >=0.13.4 && <0.14
     , th-test-utils
-    , transformers >=0.5.2 && <0.5.7
+    , transformers >=0.5.2 && <0.6
   if impl(ghc >= 8.0)
     ghc-options: -Wcompat -Wincomplete-record-updates -Wincomplete-uni-patterns -Wnoncanonical-monad-instances
   if impl(ghc < 8.8)
