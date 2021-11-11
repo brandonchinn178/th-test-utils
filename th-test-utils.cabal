@@ -37,7 +37,7 @@ library
   ghc-options: -Wall
   build-depends:
       base >=4.9 && <5
-    , template-haskell >=2.11.1.0 && <2.18
+    , template-haskell >=2.11.1.0 && <2.19
     , th-orphans >=0.13.4 && <0.14
     , transformers >=0.5.2 && <0.6
   if impl(ghc >= 8.0)
@@ -62,7 +62,7 @@ test-suite th-test-utils-test
     , tasty
     , tasty-golden
     , tasty-hunit
-    , template-haskell >=2.11.1.0 && <2.18
+    , template-haskell >=2.11.1.0 && <2.19
     , th-orphans >=0.13.4 && <0.14
     , th-test-utils
     , transformers >=0.5.2 && <0.6

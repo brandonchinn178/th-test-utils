@@ -289,3 +289,15 @@ instance Quasi (TestQ mode) where
     , whenMocked = Unsupported "qAddForeignFile"
     }
 #endif
+
+#if MIN_VERSION_template_haskell(2,18,0)
+  qPutDoc loc doc = use Override
+    { whenAllowed = qPutDoc loc doc
+    , whenMocked = Unsupported "qPutDoc"
+    }
+
+  qGetDoc loc = use Override
+    { whenAllowed = qGetDoc loc
+    , whenMocked = Unsupported "qGetDoc"
+    }
+#endif
