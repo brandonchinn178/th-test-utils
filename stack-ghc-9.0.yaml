@@ -1,4 +1,4 @@
-resolver: nightly-2021-08-29
+resolver: nightly-2021-11-06
 
 ghc-options:
   '$locals': -Werror
