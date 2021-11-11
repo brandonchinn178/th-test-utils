@@ -1,5 +1,9 @@
 ## Upcoming
 
+## 1.1.1
+
+* Support GHC 9.2
+
 ## 1.1.0
 
 * Rewrite with `runTestQ`, allowing for both recoverable `Q` actions and mocked `Q` actions in `IO`.
