@@ -1,12 +1,12 @@
-## Upcoming
+# Unreleased
 
 * Drop support for GHC < 8.10
 
-## 1.1.1
+# v1.1.1
 
 * Support GHC 9.2
 
-## 1.1.0
+# v1.1.0
 
 * Rewrite with `runTestQ`, allowing for both recoverable `Q` actions and mocked `Q` actions in `IO`.
 
@@ -19,15 +19,15 @@
 
     with the other helpers defined as before, using `tryQ'`.
 
-## 1.0.2
+# v1.0.2
 
 * Support GHC 8.10
 
-## 1.0.1
+# v1.0.1
 
 * Support GHC 8.8
 
-## 1.0.0
+# v1.0.0
 
 Initial release:
 

@@ -1,6 +1,6 @@
 # th-test-utils
 
-![CircleCI](https://img.shields.io/circleci/build/github/LeapYear/th-test-utils.svg)
+[![GitHub Actions](https://img.shields.io/github/workflow/status/LeapYear/th-test-utils/CI/main)](https://github.com/LeapYear/th-test-utils/actions?query=branch%3Amain)
 [![codecov](https://codecov.io/gh/LeapYear/th-test-utils/branch/main/graph/badge.svg)](https://codecov.io/gh/LeapYear/th-test-utils)
 [![Hackage](https://img.shields.io/hackage/v/th-test-utils.svg)](https://hackage.haskell.org/package/th-test-utils)
 
