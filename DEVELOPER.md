@@ -21,13 +21,11 @@ The following linters must pass CI in order for your PR to be accepted.
     scripts/hlint.sh
     ```
 
-* stylish-haskell
+* fourmolu
 
     ```bash
-    scripts/stylish-haskell.sh
-
-    # apply stylish-haskell changes
-    scripts/stylish-haskell.sh --apply
+    stack install fourmolu-0.7.0.1
+    fourmolu -i $(git ls-files '*.hs')
     ```
 
 ## Run tests
