@@ -5,7 +5,7 @@
 Builds must pass with Haddock enabled and no warnings in order for your PR to be accepted.
 
 ```bash
-stack build --ghc-options -Werror
+stack build
 
 # with haddock
 stack build --haddock
@@ -18,7 +18,8 @@ The following linters must pass CI in order for your PR to be accepted.
 * HLint
 
     ```bash
-    scripts/hlint.sh
+    stack install hlint-3.4.1
+    hlint .
     ```
 
 * fourmolu
