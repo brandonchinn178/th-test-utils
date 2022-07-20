@@ -5,11 +5,11 @@
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE TypeFamilies #-}
 
-module Language.Haskell.TH.TestUtils.QMode
-  ( MockedMode(..)
-  , QMode(..)
-  , IsMockedMode(..)
-  ) where
+module Language.Haskell.TH.TestUtils.QMode (
+  MockedMode (..),
+  QMode (..),
+  IsMockedMode (..),
+) where
 
 import Language.Haskell.TH
 import Language.Haskell.TH.Syntax (Lift)
@@ -42,15 +42,13 @@ instance IsMockedMode 'NotMocked where
 
 data QMode (mode :: MockedMode) where
   -- | All Q actions are mocked and IO actions are disallowed.
-  MockQ        :: QMode 'FullyMocked
-
+  MockQ :: QMode 'FullyMocked
   -- | Same as MockQ, except IO actions are passed through.
   -- Useful if your TH code, for example, reads files with runIO.
   MockQAllowIO :: QMode 'FullyMockedWithIO
-
   -- | No mocking is done.
   -- Useful for running Q as normal, but you need to get error messages.
-  AllowQ       :: QMode 'NotMocked
+  AllowQ :: QMode 'NotMocked
 
 deriving instance Show (QMode mode)
 deriving instance Lift (QMode mode)

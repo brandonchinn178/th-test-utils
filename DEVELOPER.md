@@ -21,13 +21,11 @@ The following linters must pass CI in order for your PR to be accepted.
     scripts/hlint.sh
     ```
 
-* stylish-haskell
+* fourmolu
 
     ```bash
-    scripts/stylish-haskell.sh
-
-    # apply stylish-haskell changes
-    scripts/stylish-haskell.sh --apply
+    stack install fourmolu-0.7.0.1
+    fourmolu -i $(git ls-files '*.hs')
     ```
 
 ## Run tests
@@ -40,7 +38,7 @@ stack test
 
 # Git etiquette
 
-See [`CONTRIBUTING`](https://github.com/LeapYear/.github/blob/master/CONTRIBUTING)
+See [`CONTRIBUTING`](https://github.com/LeapYear/.github/blob/main/CONTRIBUTING)
 
 # Documentation
 
@@ -72,7 +70,7 @@ Follow these steps to release this project:
        `-- @since v2.0.0`)
     1. Run `stack haddock` and skim through documentation
 
-1. Create PR as usual and merge into `master`
+1. Create PR as usual and merge into `main`
     1. In the `test_latest` CI job, check the output of the `stack sdist`
        step for any warnings.
 

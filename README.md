@@ -1,8 +1,8 @@
 # th-test-utils
 
 ![CircleCI](https://img.shields.io/circleci/build/github/LeapYear/th-test-utils.svg)
-![Hackage](https://img.shields.io/hackage/v/th-test-utils.svg)
-[![codecov](https://codecov.io/gh/LeapYear/th-test-utils/branch/master/graph/badge.svg)](https://codecov.io/gh/LeapYear/th-test-utils)
+[![codecov](https://codecov.io/gh/LeapYear/th-test-utils/branch/main/graph/badge.svg)](https://codecov.io/gh/LeapYear/th-test-utils)
+[![Hackage](https://img.shields.io/hackage/v/th-test-utils.svg)](https://hackage.haskell.org/package/th-test-utils)
 
 This package implements `tryTestQ` and related helpers in order to better test Template Haskell code. It supports returning the actual error message that [`recover` doesn't currently return](https://gitlab.haskell.org/ghc/ghc/-/issues/2340) as well as mocking out `Q` actions, so that you can run Template Haskell code at runtime.
 

@@ -67,9 +67,9 @@ jobs:
 
             stack build -j1 "${STACK_ARGS[@]}"
 
-            # build hlint/stylish-haskell for cache
+            # build hlint/fourmolu for cache
             if [[ -n "${CI_LATEST}" ]]; then
-                stack build -j1 hlint stylish-haskell
+                stack build -j1 hlint fourmolu
                 stack install hpc-lcov --local-bin-path /usr/local/bin
             fi
       - save_cache:
@@ -105,7 +105,7 @@ jobs:
                   set +e
                   STATUS=0
                   scripts/hlint.sh || STATUS=1
-                  scripts/stylish-haskell.sh || STATUS=1
+                  fourmolu -m check $(git ls-files '*.hs') || STATUS=1
                   exit "${STATUS}"
 
       # test
@@ -169,18 +169,3 @@ workflows:
       - run_build_and_test:
           name: test_ghc_8.10
           stack_yaml: stack-ghc-8.10.yaml
-      - run_build_and_test:
-          name: test_ghc_8.8
-          stack_yaml: stack-ghc-8.8.yaml
-      - run_build_and_test:
-          name: test_ghc_8.6
-          stack_yaml: stack-ghc-8.6.yaml
-      - run_build_and_test:
-          name: test_ghc_8.4
-          stack_yaml: stack-ghc-8.4.yaml
-      - run_build_and_test:
-          name: test_ghc_8.2
-          stack_yaml: stack-ghc-8.2.yaml
-      - run_build_and_test:
-          name: test_ghc_8.0
-          stack_yaml: stack-ghc-8.0.yaml

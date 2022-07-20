@@ -6,7 +6,7 @@ module TH where
 import Control.Exception (SomeException, displayException, try)
 import Data.Bifunctor (first)
 import Language.Haskell.TH
-import Language.Haskell.TH.Syntax (Module(..))
+import Language.Haskell.TH.Syntax (Module (..))
 import Test.Tasty.HUnit (Assertion, testCase, (@?=))
 
 import Language.Haskell.TH.TestUtils (runTestQ, unmockedState)
@@ -15,7 +15,7 @@ import Language.Haskell.TH.TestUtils (runTestQ, unmockedState)
 testCaseTH :: String -> Q Assertion -> ExpQ
 testCaseTH testName q = do
   q >>= runIO
-  [| testCase testName $ return () |]
+  [|testCase testName $ return ()|]
 
 -- | Check that the given action evalutes.
 isSuccess :: Q a -> Q Assertion
@@ -51,4 +51,4 @@ thisModule :: ExpQ
 thisModule = do
   Module pkgName modName <- Language.Haskell.TH.thisModule
   -- if only Module had a Lift instance
-  [| Module pkgName modName |]
+  [|Module pkgName modName|]
