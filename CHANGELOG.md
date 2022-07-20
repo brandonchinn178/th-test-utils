@@ -1,5 +1,7 @@
 ## Upcoming
 
+* Drop support for GHC < 8.10
+
 ## 1.1.1
 
 * Support GHC 9.2
