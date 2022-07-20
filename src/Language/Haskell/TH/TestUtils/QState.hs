@@ -2,7 +2,7 @@
 {-# LANGUAGE DeriveLift #-}
 {-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE TemplateHaskellQuotes #-}
 
 module Language.Haskell.TH.TestUtils.QState (
   QState (..),
