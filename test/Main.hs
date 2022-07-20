@@ -1,4 +1,3 @@
-{-# LANGUAGE CPP #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE RankNTypes #-}
@@ -8,17 +7,12 @@
 {-# LANGUAGE TypeApplications #-}
 
 import Control.Monad (join)
-#if MIN_VERSION_template_haskell(2,13,0)
 import Control.Monad.IO.Class (liftIO)
-#endif
 import Data.ByteString.Lazy (ByteString)
 import qualified Data.ByteString.Lazy.Char8 as Char8
 import Data.List (intercalate)
 import Language.Haskell.TH (AnnLookup(..), Q, Type(..), runIO)
-import Language.Haskell.TH.Syntax (Extension(..), Quasi(..))
-#if MIN_VERSION_template_haskell(2,12,0)
-import Language.Haskell.TH.Syntax (ForeignSrcLang(..))
-#endif
+import Language.Haskell.TH.Syntax (Extension(..), ForeignSrcLang(..), Quasi(..))
 import Test.Tasty
 import Test.Tasty.Golden
 import Test.Tasty.HUnit
@@ -100,11 +94,9 @@ testAllowQ = testGroup "AllowQ"
       , $(testCaseTH "qReifyFixity" $
             checkUnmockedMatches $ qReifyFixity '($)
           )
-#if MIN_VERSION_template_haskell(2,16,0)
       , $(testCaseTH "qReifyType" $
             checkUnmockedMatches $ qReifyType ''Maybe
           )
-#endif
       , $(testCaseTH "qReifyInstances" $
             checkUnmockedMatches $ qReifyInstances ''Show [ConT ''Int]
           )
@@ -133,17 +125,11 @@ testAllowQ = testGroup "AllowQ"
             decs <- [d| {-# ANN module "AllowQ - qAddTopDecls" #-} |]
             isSuccess $ runTestQ unmockedState $ qAddTopDecls decs
           )
-#if MIN_VERSION_template_haskell(2,14,0)
       , $(testCaseTH "qAddTempFile, qAddForeignFilePath" $ isSuccess $ do
             fp <- runTestQ unmockedState $ qAddTempFile "c"
             qRunIO $ writeFile fp "#include <stdio.h>"
             runTestQ unmockedState $ qAddForeignFilePath LangC fp
           )
-#elif MIN_VERSION_template_haskell(2,12,0)
-      , $(testCaseTH "qAddForeignFile" $
-            isSuccess $ runTestQ unmockedState $ qAddForeignFile LangC "#include <stdio.h>"
-          )
-#endif
       , $(testCaseTH "qAddModFinalizer" $
             isSuccess $ runTestQ unmockedState $ qAddModFinalizer $ return ()
           )
@@ -282,14 +268,12 @@ testMockQ' MockQTests{..} = testGroup (show qMode)
             [ ("Found", runTestQWithErrors state $ qReifyFixity '($))
             , ("Missing", runTestQWithErrors state $ qReifyFixity '(+))
             ]
-#if MIN_VERSION_template_haskell(2,16,0)
       , golden "qReifyType" $ do
           let state = mockedState { reifyInfo = $(loadNames [''Maybe]) }
           labelled
             [ ("Found", runTestQWithErrors state $ qReifyType ''Maybe)
             , ("Missing", runTestQWithErrors state $ qReifyType ''Show)
             ]
-#endif
       , golden "qReifyInstances" $
           runUnsupported mockedState $ qReifyInstances ''Show [ConT ''Int]
       , golden "qReifyRoles" $ do
@@ -318,29 +302,20 @@ testMockQ' MockQTests{..} = testGroup (show qMode)
           runIOResult <- runTestQWithErrors mockedState $ runIO io
           runIOResult @?= qRunIOResult x
 
-#if MIN_VERSION_template_haskell(2,13,0)
           liftIOResult <- runTestQWithErrors mockedState $ liftIO io
           liftIOResult @?= qRunIOResult x
-#endif
       , golden "qAddDependentFile" $
           runUnsupported mockedState $ qAddDependentFile "README.md"
       , golden "qAddTopDecls" $
           runUnsupported mockedState $ qAddTopDecls []
-#if MIN_VERSION_template_haskell(2,14,0)
       , golden "qAddTempFile" $
           runUnsupported mockedState $ qAddTempFile "c"
       , golden "qAddForeignFilePath" $
           runUnsupported mockedState $ qAddForeignFilePath LangC "foo.c"
-#elif MIN_VERSION_template_haskell(2,12,0)
-      , golden "qAddForeignFile" $
-          runUnsupported mockedState $ qAddForeignFile LangC "#include <stdio.h>"
-#endif
       , golden "qAddModFinalizer" $
           runUnsupported mockedState $ qAddModFinalizer $ return ()
-#if MIN_VERSION_template_haskell(2,13,0)
       , golden "qAddCorePlugin" $
           runUnsupported mockedState $ qAddCorePlugin "MyPlugin"
-#endif
       , golden "qGetQ" $
           runUnsupported mockedState $ qGetQ @_ @String
       , golden "qPutQ" $

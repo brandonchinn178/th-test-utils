@@ -1,4 +1,3 @@
-{-# LANGUAGE CPP #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DeriveLift #-}
 {-# LANGUAGE KindSignatures #-}
@@ -15,9 +14,6 @@ module Language.Haskell.TH.TestUtils.QState
 import Language.Haskell.TH
 import Language.Haskell.TH.Instances ()
 import Language.Haskell.TH.Syntax (Lift)
-#if MIN_VERSION_template_haskell(2,16,0)
-import qualified Language.Haskell.TH.Syntax as TH
-#endif
 
 import Language.Haskell.TH.TestUtils.QMode (MockedMode(..), QMode(..))
 
@@ -50,13 +46,9 @@ loadNames names = listE $ flip map names $ \name -> do
   info <- reify name
   fixity <- reifyFixity name
   roles <- recover (pure Nothing) $ Just <$> reifyRoles name
-#if MIN_VERSION_template_haskell(2,16,0)
-  let infoType = reifyType name >>= TH.lift
-#else
-  let infoType = [| error "Your version of template-haskell does not have 'reifyType'" |]
-#endif
+  infoType <- reifyType name
 
-  [| (name, ReifyInfo info fixity roles $infoType) |]
+  [| (name, ReifyInfo info fixity roles infoType) |]
 
 -- | A shortcut for defining an unmocked Q.
 unmockedState :: QState 'NotMocked

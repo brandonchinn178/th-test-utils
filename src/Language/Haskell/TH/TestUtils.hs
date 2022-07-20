@@ -30,9 +30,6 @@ module Language.Haskell.TH.TestUtils
   , tryTestQ
   ) where
 
-#if !MIN_VERSION_base(4,13,0)
-import Control.Monad.Fail (MonadFail(..))
-#endif
 import Control.Monad.IO.Class (MonadIO(..))
 import Control.Monad.Trans.Class (lift)
 import qualified Control.Monad.Trans.Except as Except
@@ -209,12 +206,10 @@ instance Quasi (TestQ mode) where
         Just roles -> return roles
     }
 
-#if MIN_VERSION_template_haskell(2,16,0)
   qReifyType name = use Override
     { whenAllowed = qReifyType name
     , whenMocked = DoInstead $ lookupReifyInfo reifyInfoType name
     }
-#endif
 
   {- Currently unsupported -}
 
@@ -266,15 +261,10 @@ instance Quasi (TestQ mode) where
     { whenAllowed = qExtsEnabled
     , whenMocked = Unsupported "qExtsEnabled"
     }
-
-#if MIN_VERSION_template_haskell(2,13,0)
   qAddCorePlugin plugin = use Override
     { whenAllowed = qAddCorePlugin plugin
     , whenMocked = Unsupported "qAddCorePlugin"
     }
-#endif
-
-#if MIN_VERSION_template_haskell(2,14,0)
   qAddTempFile suffix = use Override
     { whenAllowed = qAddTempFile suffix
     , whenMocked = Unsupported "qAddTempFile"
@@ -283,12 +273,6 @@ instance Quasi (TestQ mode) where
     { whenAllowed = qAddForeignFilePath lang fp
     , whenMocked = Unsupported "qAddForeignFilePath"
     }
-#elif MIN_VERSION_template_haskell(2,12,0)
-  qAddForeignFile lang fp = use Override
-    { whenAllowed = qAddForeignFile lang fp
-    , whenMocked = Unsupported "qAddForeignFile"
-    }
-#endif
 
 #if MIN_VERSION_template_haskell(2,18,0)
   qPutDoc loc doc = use Override
