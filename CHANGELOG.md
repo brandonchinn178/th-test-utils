@@ -1,5 +1,7 @@
 # Unreleased
 
+# v1.2.0
+
 * Drop support for GHC < 8.10
 
 # v1.1.1
