@@ -338,3 +338,12 @@ instance Quasi (TestQ mode) where
     , whenMocked = Unsupported "qGetDoc"
     }
 #endif
+
+#if MIN_VERSION_template_haskell(2,19,0)
+  qGetPackageRoot =
+    use
+      Override
+        { whenAllowed = qGetPackageRoot
+        , whenMocked = Unsupported "qGetPackageRoot"
+        }
+#endif
