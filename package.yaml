@@ -33,7 +33,7 @@ when:
 
 dependencies:
 - base >= 4.9 && < 5
-- template-haskell >= 2.16 && <2.19
+- template-haskell >= 2.16 && <2.20
 - th-orphans >= 0.13.4 && <0.14
 - transformers >= 0.5.2 && < 0.6
 
