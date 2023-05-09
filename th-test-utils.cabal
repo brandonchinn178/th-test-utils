@@ -1,6 +1,6 @@
 cabal-version: >= 1.10
 
--- This file has been generated from package.yaml by hpack version 0.35.0.
+-- This file has been generated from package.yaml by hpack version 0.35.1.
 --
 -- see: https://github.com/sol/hpack
 
@@ -10,12 +10,11 @@ synopsis:       Utility functions for testing Template Haskell code
 description:    Utility functions for testing Template Haskell code, including
                 functions for testing failures in the Q monad.
 category:       Testing
-homepage:       https://github.com/LeapYear/th-test-utils#readme
-bug-reports:    https://github.com/LeapYear/th-test-utils/issues
-author:         Brandon Chinn <brandon@leapyear.io>
-maintainer:     Brandon Chinn <brandon@leapyear.io>
+homepage:       https://github.com/brandonchinn178/th-test-utils#readme
+bug-reports:    https://github.com/brandonchinn178/th-test-utils/issues
+author:         Brandon Chinn <brandonchinn178@gmail.com>
+maintainer:     Brandon Chinn <brandonchinn178@gmail.com>
 license:        BSD3
-license-file:   LICENSE
 build-type:     Simple
 extra-source-files:
     README.md
@@ -23,7 +22,7 @@ extra-source-files:
 
 source-repository head
   type: git
-  location: https://github.com/LeapYear/th-test-utils
+  location: https://github.com/brandonchinn178/th-test-utils
 
 library
   exposed-modules:
@@ -37,7 +36,7 @@ library
   ghc-options: -Wall
   build-depends:
       base >=4.9 && <5
-    , template-haskell >=2.16 && <2.20
+    , template-haskell >=2.16 && <2.21
     , th-orphans >=0.13.4 && <0.14
     , transformers >=0.5.2 && <0.6
   default-language: Haskell2010
@@ -62,7 +61,7 @@ test-suite th-test-utils-test
     , tasty
     , tasty-golden
     , tasty-hunit
-    , template-haskell >=2.16 && <2.20
+    , template-haskell >=2.16 && <2.21
     , th-orphans >=0.13.4 && <0.14
     , th-test-utils
     , transformers >=0.5.2 && <0.6
