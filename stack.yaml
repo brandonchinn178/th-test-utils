@@ -1,1 +1,4 @@
-stack-ghc-9.0.yaml
+resolver: lts-20.20
+
+ghc-options:
+  '$locals': -Werror
