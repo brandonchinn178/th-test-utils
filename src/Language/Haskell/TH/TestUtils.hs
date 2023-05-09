@@ -8,7 +8,7 @@
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
 
-{- |
+{-|
 Module      :  Language.Haskell.TH.TestUtils
 Maintainer  :  Brandon Chinn <brandonchinn178@gmail.com>
 Stability   :  experimental

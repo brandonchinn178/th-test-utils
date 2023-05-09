@@ -35,15 +35,14 @@ data ReifyInfo = ReifyInfo
   }
   deriving (Show, Lift)
 
-{- | A helper for loading names for 'reifyInfo'
-
- Usage:
-
- > QState
- >   { reifyInfo = $(loadNames [''Int, ''Maybe])
- >   , ...
- >   }
--}
+-- | A helper for loading names for 'reifyInfo'
+--
+--  Usage:
+--
+--  > QState
+--  >   { reifyInfo = $(loadNames [''Int, ''Maybe])
+--  >   , ...
+--  >   }
 loadNames :: [Name] -> ExpQ
 loadNames names = listE $ flip map names $ \name -> do
   info <- reify name
