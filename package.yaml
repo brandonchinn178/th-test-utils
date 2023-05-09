@@ -4,9 +4,9 @@ verbatim:
   cabal-version: '>= 1.10'
 license: BSD3
 author:
-  - Brandon Chinn <brandon@leapyear.io>
+  - Brandon Chinn <brandonchinn178@gmail.com>
 maintainer:
-  - Brandon Chinn <brandon@leapyear.io>
+  - Brandon Chinn <brandonchinn178@gmail.com>
 category: Testing
 synopsis: Utility functions for testing Template Haskell code
 description: |
@@ -16,7 +16,7 @@ extra-source-files:
   - README.md
   - CHANGELOG.md
 
-github: LeapYear/th-test-utils
+github: brandonchinn178/th-test-utils
 
 ghc-options: -Wall
 when:
