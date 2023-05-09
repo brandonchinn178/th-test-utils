@@ -204,7 +204,7 @@ data MockQTests mode = MockQTests
   }
 
 -- | Tests for both MockQ and MockQAllowIO, since they should behave exactly the same except for qRunIO.
-testMockQ' :: forall mode. IsMockedMode mode => MockQTests mode -> TestTree
+testMockQ' :: forall mode. (IsMockedMode mode) => MockQTests mode -> TestTree
 testMockQ' MockQTests{..} =
   testGroup
     (show qMode)
@@ -381,12 +381,12 @@ testMockQ' MockQTests{..} =
     -- force both MockQ and MockQAllowIO to resolve the same goldens
     golden name = goldenVsString name ("test/goldens/MockQ_" ++ name ++ ".golden")
 
-    labelled :: Show a => [(String, IO a)] -> IO ByteString
+    labelled :: (Show a) => [(String, IO a)] -> IO ByteString
     labelled vals = do
       let mkLine (label, getVal) = do
             val <- getVal
             return $ label ++ ": " ++ show val
       Char8.pack . intercalate "\n" . map (++ "\n") <$> mapM mkLine vals
 
-    runUnsupported :: Show a => QState mode -> Q a -> IO ByteString
+    runUnsupported :: (Show a) => QState mode -> Q a -> IO ByteString
     runUnsupported state q = labelled [("Unsupported", runTestQWithErrors state q)]

@@ -42,7 +42,7 @@ tryQ :: Q a -> Q (Either String a)
 tryQ q = runIO . tryIO . forceM . pure =<< q
 
 -- | Force the evaluation of @a@ when the monadic action is evaluated.
-forceM :: Monad m => m a -> m a
+forceM :: (Monad m) => m a -> m a
 forceM m = do
   a <- m
   a `seq` return a

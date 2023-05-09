@@ -43,7 +43,7 @@ import Language.Haskell.TH.Syntax (Quasi (..), mkNameU)
 import Language.Haskell.TH.TestUtils.QMode
 import Language.Haskell.TH.TestUtils.QState
 
-runTestQ :: forall mode a. IsMockedMode mode => QState mode -> Q a -> TestQResult mode a
+runTestQ :: forall mode a. (IsMockedMode mode) => QState mode -> Q a -> TestQResult mode a
 runTestQ state = fmapResult' (either error id) . tryTestQ state
   where
     fmapResult' = fmapResult @mode @(Either String a) @a
@@ -54,7 +54,7 @@ runTestQErr state = fmapResult' (either id (error . mkMsg)) . tryTestQ state
     fmapResult' = fmapResult @mode @(Either String a) @String
     mkMsg a = "Unexpected success: " ++ show a
 
-tryTestQ :: forall mode a. IsMockedMode mode => QState mode -> Q a -> TestQResult mode (Either String a)
+tryTestQ :: forall mode a. (IsMockedMode mode) => QState mode -> Q a -> TestQResult mode (Either String a)
 tryTestQ state = runResult @mode . runTestQMonad . runQ
   where
     runTestQMonad =
