@@ -1,6 +1,6 @@
 cabal-version: >= 1.10
 
--- This file has been generated from package.yaml by hpack version 0.35.1.
+-- This file has been generated from package.yaml by hpack version 0.35.2.
 --
 -- see: https://github.com/sol/hpack
 
@@ -15,6 +15,7 @@ bug-reports:    https://github.com/brandonchinn178/th-test-utils/issues
 author:         Brandon Chinn <brandonchinn178@gmail.com>
 maintainer:     Brandon Chinn <brandonchinn178@gmail.com>
 license:        BSD3
+license-file:   LICENSE.md
 build-type:     Simple
 extra-source-files:
     README.md
