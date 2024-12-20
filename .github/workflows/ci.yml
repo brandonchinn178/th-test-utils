@@ -71,7 +71,7 @@ jobs:
       -
         id: setup
         name: Set up GHC ${{ matrix.ghc_version }}
-        uses: haskell-actions/setup@v2.4.0
+        uses: haskell-actions/setup@v2
         with:
           ghc-version: ${{ matrix.ghc_version }}
       -
