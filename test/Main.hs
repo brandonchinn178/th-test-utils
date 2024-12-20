@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE RankNTypes #-}
@@ -8,9 +9,11 @@
 
 import Control.Monad (join)
 import Control.Monad.IO.Class (liftIO)
-import Data.ByteString.Lazy (ByteString)
-import qualified Data.ByteString.Lazy.Char8 as Char8
 import Data.List (intercalate)
+import Data.Text (Text)
+import qualified Data.Text as Text
+import qualified Data.Text.Lazy as TextL
+import qualified Data.Text.Lazy.Encoding as TextL
 import Language.Haskell.TH (AnnLookup (..), Q, Type (..), runIO)
 import Language.Haskell.TH.Syntax (Extension (..), ForeignSrcLang (..), Quasi (..))
 import Test.Tasty
@@ -379,14 +382,29 @@ testMockQ' MockQTests{..} =
         ]
 
     -- force both MockQ and MockQAllowIO to resolve the same goldens
-    golden name = goldenVsString name ("test/goldens/MockQ_" ++ name ++ ".golden")
+    golden name =
+      goldenVsString name ("test/goldens/MockQ_" ++ name ++ ".golden")
+        . fmap (TextL.encodeUtf8 . TextL.fromStrict . normalizeGhc910)
 
-    labelled :: (Show a) => [(String, IO a)] -> IO ByteString
+    labelled :: (Show a) => [(String, IO a)] -> IO Text
     labelled vals = do
       let mkLine (label, getVal) = do
             val <- getVal
             return $ label ++ ": " ++ show val
-      Char8.pack . intercalate "\n" . map (++ "\n") <$> mapM mkLine vals
+      Text.pack . intercalate "\n" . map (++ "\n") <$> mapM mkLine vals
 
-    runUnsupported :: (Show a) => QState mode -> Q a -> IO ByteString
+    runUnsupported :: (Show a) => QState mode -> Q a -> IO Text
     runUnsupported state q = labelled [("Unsupported", runTestQWithErrors state q)]
+
+{- HLINT ignore "Redundant id" -}
+normalizeGhc910 :: Text -> Text
+normalizeGhc910 =
+  id
+#if __GLASGOW_HASKELL__ < 910
+    . replace "GHC.Show" "GHC.Internal.Show"
+    . replace "GHC.Base" "GHC.Internal.Base"
+    . replace "GHC.Num" "GHC.Internal.Num"
+    . replace "System.IO" "GHC.Internal.System.IO"
+  where
+    replace old new = Text.replace (Text.pack old) (Text.pack new)
+#endif

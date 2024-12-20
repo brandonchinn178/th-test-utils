@@ -58,11 +58,11 @@ test-suite th-test-utils-test
   ghc-options: -Wall
   build-depends:
       base >=4.9 && <5
-    , bytestring
     , tasty
     , tasty-golden
     , tasty-hunit
     , template-haskell >=2.16 && <2.24
+    , text
     , th-orphans >=0.13.4 && <0.14
     , th-test-utils
     , transformers >=0.5.2 && <0.7

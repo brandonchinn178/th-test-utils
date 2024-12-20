@@ -1,3 +1,3 @@
 Found: Right (AppT (AppT ArrowT StarT) StarT)
 
-Missing: Left "Cannot reify GHC.Show.Show (did you mean to add it to reifyInfo?)"
+Missing: Left "Cannot reify GHC.Internal.Show.Show (did you mean to add it to reifyInfo?)"

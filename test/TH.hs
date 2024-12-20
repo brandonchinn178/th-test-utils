@@ -35,7 +35,10 @@ tryIO :: IO a -> IO (Either String a)
 tryIO m = first showError <$> try m
   where
     -- strip out call stack
-    showError = head . lines . displayException @SomeException
+    showError e =
+      case lines $ displayException @SomeException e of
+        s : _ -> s
+        [] -> error $ "Unexpectedly got empty string: " ++ show e
 
 -- | Same as tryIO, except in the Q monad.
 tryQ :: Q a -> Q (Either String a)
