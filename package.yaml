@@ -1,5 +1,5 @@
 name: th-test-utils
-version: 1.2.1
+version: 1.2.2
 verbatim:
   cabal-version: '>= 1.10'
 license: BSD3
@@ -33,7 +33,7 @@ when:
 
 dependencies:
 - base >= 4.9 && < 5
-- template-haskell >= 2.16 && <2.22
+- template-haskell >= 2.16 && <2.24
 - th-orphans >= 0.13.4 && <0.14
 - transformers >= 0.5.2 && < 0.7
 
@@ -45,8 +45,8 @@ tests:
     source-dirs:  test
     main:         Main.hs
     dependencies:
-      - bytestring
       - tasty
       - tasty-golden
       - tasty-hunit
+      - text
       - th-test-utils

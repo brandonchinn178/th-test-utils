@@ -1,5 +1,9 @@
 # Unreleased
 
+# v1.2.2
+
+* Support GHC 9.6 - 9.12
+
 # v1.2.1
 
 * Support GHC 9.4

@@ -40,7 +40,7 @@ jobs:
         if: ${{ matrix.latest }}
         name: Convert coverage output
         run: |
-          HPC_LCOV_VERSION=1.1.1
+          HPC_LCOV_VERSION=1.2.0
           curl -fsSL \
             "https://github.com/brandonchinn178/hpc-lcov/releases/download/v${HPC_LCOV_VERSION}/hpc-lcov-${HPC_LCOV_VERSION}-linux-x86_64" \
             -o /usr/local/bin/hpc-lcov
@@ -61,6 +61,9 @@ jobs:
           - '9.2'
           - '9.4'
           - '9.6'
+          - '9.8'
+          - '9.10'
+          - '9.12'
 
     name: ghc_compat_test (${{ matrix.ghc_version }})
     runs-on: ubuntu-latest
@@ -71,7 +74,7 @@ jobs:
       -
         id: setup
         name: Set up GHC ${{ matrix.ghc_version }}
-        uses: haskell-actions/setup@v2.4.0
+        uses: haskell-actions/setup@v2
         with:
           ghc-version: ${{ matrix.ghc_version }}
       -

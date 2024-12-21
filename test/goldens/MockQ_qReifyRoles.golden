@@ -1,5 +1,5 @@
 Found: Right [RepresentationalR]
 
-Invalid: Left "No roles associated with GHC.Base.map"
+Invalid: Left "No roles associated with GHC.Internal.Base.map"
 
-Missing: Left "Cannot reify GHC.Show.Show (did you mean to add it to reifyInfo?)"
+Missing: Left "Cannot reify GHC.Internal.Show.Show (did you mean to add it to reifyInfo?)"
