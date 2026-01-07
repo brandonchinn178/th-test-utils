@@ -29,7 +29,7 @@ jobs:
 
     steps:
       -
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       -
         id: setup
         name: Set up GHC ${{ matrix.ghc_version }}
@@ -43,6 +43,14 @@ jobs:
             --enable-test
             --test-show-details=streaming
       -
+        if: ${{ matrix.ghc_version == '9.14' }}
+        run: >
+          cabal configure
+          --enable-append
+          --allow-newer='th-expand-syns:*'
+          --allow-newer='th-lift:*'
+          --allow-newer='th-orphans:*'
+      -
         if: ${{ matrix.oldest }}
         name: Use oldest dependencies
         run: cabal configure --enable-append --prefer-oldest
@@ -53,7 +61,7 @@ jobs:
         name: Get current month to clear cache
         run: echo "CURR_MONTH=$(date +%B)" | tee -a "$GITHUB_ENV"
       -
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ${{ steps.setup.outputs.cabal-store }}
           key: ${{ runner.os }}-cabal-cache-${{ env.CURR_MONTH }}-${{ matrix.ghc_version }}-${{ hashFiles('**/plan.json') }}
@@ -69,7 +77,7 @@ jobs:
       FOURMOLU_VERSION: '0.19.0.1'
     steps:
       -
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       -
         name: Install fourmolu
         run: |
@@ -85,7 +93,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       -
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       -
         id: setup
         name: Set up GHC
