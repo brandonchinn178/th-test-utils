@@ -16,7 +16,7 @@ jobs:
         with:
           ref: main
       -
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: th-test-utils-sdist
           path: ./sdist/
@@ -29,20 +29,20 @@ jobs:
         name: Set version label
         run: echo 'VERSION=v${{ steps.cabal_file.outputs.version }}' >> "${GITHUB_ENV}"
       -
+        id: hackage_token_secret
+        name: Load Hackage token secret name
+        run: |
+          USERNAME="$(echo "${GITHUB_ACTOR}" | tr '[:lower:]' '[:upper:]' | tr '-' '_')"
+          echo "name=HACKAGE_TOKEN_${USERNAME}" >> "${GITHUB_OUTPUT}"
+      -
         name: Get CHANGELOG section
         run: |
-          sed '/^# Unreleased/,/^$/d' CHANGELOG.md > /tmp/changelog-without-unreleased
-          if [[ "$(head -n 1 /tmp/changelog-without-unreleased)" != "# ${VERSION}" ]]; then
+          sed '/^## Unreleased/,/^$/d' CHANGELOG.md > /tmp/changelog-without-unreleased
+          if [[ "$(head -n 1 /tmp/changelog-without-unreleased)" != "## ${VERSION}" ]]; then
             echo "CHANGELOG doesn't look updated" >&2
             exit 1
           fi
           sed '1 d; /^# v/,$ d' /tmp/changelog-without-unreleased > /tmp/changelog-body
-      -
-        name: Load Hackage token secret name
-        id: hackage_token_secret
-        run: |
-          USERNAME="$(echo "${GITHUB_ACTOR}" | tr '[:lower:]' '[:upper:]' | tr '-' '_')"
-          echo "name=HACKAGE_TOKEN_${USERNAME}" >> "${GITHUB_OUTPUT}"
       -
         uses: haskell-actions/hackage-publish@v1
         with:

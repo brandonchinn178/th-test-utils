@@ -1,9 +1,5 @@
 cabal-version: >= 1.10
 
--- This file has been generated from package.yaml by hpack version 0.37.0.
---
--- see: https://github.com/sol/hpack
-
 name:           th-test-utils
 version:        1.2.2
 synopsis:       Utility functions for testing Template Haskell code
