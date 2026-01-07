@@ -1,7 +1,7 @@
 cabal-version: >= 1.10
 
 name:           th-test-utils
-version:        1.2.2
+version:        1.2.3
 synopsis:       Utility functions for testing Template Haskell code
 description:    Utility functions for testing Template Haskell code, including
                 functions for testing failures in the Q monad.
