@@ -384,7 +384,7 @@ testMockQ' MockQTests{..} =
     -- force both MockQ and MockQAllowIO to resolve the same goldens
     golden name =
       goldenVsString name ("test/goldens/MockQ_" ++ name ++ ".golden")
-        . fmap (TextL.encodeUtf8 . TextL.fromStrict . normalizeGhc910)
+        . fmap (TextL.encodeUtf8 . TextL.fromStrict . normalizeModules)
 
     labelled :: (Show a) => [(String, IO a)] -> IO Text
     labelled vals = do
@@ -396,15 +396,26 @@ testMockQ' MockQTests{..} =
     runUnsupported :: (Show a) => QState mode -> Q a -> IO Text
     runUnsupported state q = labelled [("Unsupported", runTestQWithErrors state q)]
 
-{- HLINT ignore "Redundant id" -}
-normalizeGhc910 :: Text -> Text
-normalizeGhc910 =
-  id
-#if __GLASGOW_HASKELL__ < 910
-    . replace "GHC.Show" "GHC.Internal.Show"
-    . replace "GHC.Base" "GHC.Internal.Base"
-    . replace "GHC.Num" "GHC.Internal.Num"
-    . replace "System.IO" "GHC.Internal.System.IO"
+normalizeModules :: Text -> Text
+normalizeModules s0 = foldr go s0 $ changes910 <> changes914
   where
-    replace old new = Text.replace (Text.pack old) (Text.pack new)
+    go (old, new) = Text.replace (Text.pack old) (Text.pack new)
+
+#if __GLASGOW_HASKELL__ < 910
+    changes910 =
+      [ ("GHC.Show", "GHC.Internal.Show")
+      , ("GHC.Base", "GHC.Internal.Base")
+      , ("GHC.Num", "GHC.Internal.Num")
+      , ("System.IO", "GHC.Internal.System.IO")
+      ]
+#else
+    changes910 = []
+#endif
+
+#if __GLASGOW_HASKELL__ < 914
+    changes914 =
+      [ ("GHC.Types.IO", "GHC.Internal.Types.IO")
+      ]
+#else
+    changes914 = []
 #endif
