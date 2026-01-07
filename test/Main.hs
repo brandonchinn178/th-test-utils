@@ -47,136 +47,136 @@ testAllowQ =
       testGroup
         "tryTestQ, runTestQ, runTestQErr"
         [ $( testCaseTH "tryTestQ - success" $ do
-              let x = 1
-              result <- tryTestQ unmockedState (return x :: Q Int)
-              return $ result @?= Right x
+               let x = 1
+               result <- tryTestQ unmockedState (return x :: Q Int)
+               return $ result @?= Right x
            )
         , $( testCaseTH "tryTestQ - error" $ do
-              let msg = "Error message"
-              result <- tryTestQ unmockedState (fail msg :: Q Int)
-              return $ result @?= Left msg
+               let msg = "Error message"
+               result <- tryTestQ unmockedState (fail msg :: Q Int)
+               return $ result @?= Left msg
            )
         , $( testCaseTH "fmap Right . runTestQ === tryTestQ" $ do
-              actual <- Right <$> runTestQ unmockedState basicSuccess
-              expected <- tryTestQ unmockedState basicSuccess
-              return $ actual @?= expected
+               actual <- Right <$> runTestQ unmockedState basicSuccess
+               expected <- tryTestQ unmockedState basicSuccess
+               return $ actual @?= expected
            )
         , $( testCaseTH "runTestQ errors on failure" $ do
-              let msg = "Error message"
-              result <- tryQ $ runTestQ unmockedState (fail msg :: Q ())
-              return $ result @?= Left msg
+               let msg = "Error message"
+               result <- tryQ $ runTestQ unmockedState (fail msg :: Q ())
+               return $ result @?= Left msg
            )
         , $( testCaseTH "fmap Left . runTestQErr === tryTestQ" $ do
-              actual <- Left <$> runTestQErr unmockedState basicFailure
-              expected <- tryTestQ unmockedState basicFailure
-              return $ actual @?= expected
+               actual <- Left <$> runTestQErr unmockedState basicFailure
+               expected <- tryTestQ unmockedState basicFailure
+               return $ actual @?= expected
            )
         , $( testCaseTH "runTestQErr errors on success" $ do
-              result <- tryQ $ runTestQErr unmockedState (return 1 :: Q Int)
-              return $ result @?= Left "Unexpected success: 1"
+               result <- tryQ $ runTestQErr unmockedState (return 1 :: Q Int)
+               return $ result @?= Left "Unexpected success: 1"
            )
         ]
     testMethods =
       testGroup
         "Quasi methods"
         [ $( testCaseTH "qNewName" $
-              isSuccess $
-                runTestQ unmockedState $
-                  qNewName "foo"
+               isSuccess $
+                 runTestQ unmockedState $
+                   qNewName "foo"
            )
         , $( testCaseTH "qReport" $
-              -- not testing 'qReport False' because it fails with '-Werror'
-              -- isSuccess $ runTestQ unmockedState $ qReport False "A warning message"
-              isSuccess $
-                runTestQ unmockedState $
-                  qReport True "An error message"
+               -- not testing 'qReport False' because it fails with '-Werror'
+               -- isSuccess $ runTestQ unmockedState $ qReport False "A warning message"
+               isSuccess $
+                 runTestQ unmockedState $
+                   qReport True "An error message"
            )
         , $( testCaseTH "qRecover" $ do
-              let x = "Success"
-              result <- runTestQ unmockedState $ qRecover (return x) basicFailure
-              return $ result @?= x
+               let x = "Success"
+               result <- runTestQ unmockedState $ qRecover (return x) basicFailure
+               return $ result @?= x
            )
         , $( testCaseTH "qLookupName" $
-              checkUnmockedMatches $
-                sequence
-                  [ qLookupName True "Show"
-                  , qLookupName True "Right"
-                  , qLookupName False "Right"
-                  , qLookupName False "Show"
-                  ]
+               checkUnmockedMatches $
+                 sequence
+                   [ qLookupName True "Show"
+                   , qLookupName True "Right"
+                   , qLookupName False "Right"
+                   , qLookupName False "Show"
+                   ]
            )
         , $( testCaseTH "qReify" $
-              checkUnmockedMatches $
-                qReify ''Maybe
+               checkUnmockedMatches $
+                 qReify ''Maybe
            )
         , $( testCaseTH "qReifyFixity" $
-              checkUnmockedMatches $
-                qReifyFixity '($)
+               checkUnmockedMatches $
+                 qReifyFixity '($)
            )
         , $( testCaseTH "qReifyType" $
-              checkUnmockedMatches $
-                qReifyType ''Maybe
+               checkUnmockedMatches $
+                 qReifyType ''Maybe
            )
         , $( testCaseTH "qReifyInstances" $
-              checkUnmockedMatches $
-                qReifyInstances ''Show [ConT ''Int]
+               checkUnmockedMatches $
+                 qReifyInstances ''Show [ConT ''Int]
            )
         , $( testCaseTH "qReifyRoles" $
-              checkUnmockedMatches $
-                qReifyRoles ''Maybe
+               checkUnmockedMatches $
+                 qReifyRoles ''Maybe
            )
         , $( testCaseTH "qReifyAnnotations" $
-              checkUnmockedMatches $
-                qReifyAnnotations @_ @[String] (AnnLookupName 'basicSuccess)
+               checkUnmockedMatches $
+                 qReifyAnnotations @_ @[String] (AnnLookupName 'basicSuccess)
            )
         , $( testCaseTH "qReifyModule" $
-              checkUnmockedMatches $
-                qReifyModule $(thisModule)
+               checkUnmockedMatches $
+                 qReifyModule $(thisModule)
            )
         , $( testCaseTH "qReifyConStrictness" $
-              checkUnmockedMatches $
-                qReifyConStrictness 'Just
+               checkUnmockedMatches $
+                 qReifyConStrictness 'Just
            )
         , $( testCaseTH "qLocation" $
-              checkUnmockedMatches qLocation
+               checkUnmockedMatches qLocation
            )
         , $( testCaseTH "qRunIO, qAddDependentFile" $
-              checkUnmockedMatches $ do
-                readmeContents <- qRunIO $ readFile "README.md"
-                qAddDependentFile "README.md"
-                return readmeContents
+               checkUnmockedMatches $ do
+                 readmeContents <- qRunIO $ readFile "README.md"
+                 qAddDependentFile "README.md"
+                 return readmeContents
            )
         , $( testCaseTH "qAddTopDecls" $ do
-              decs <- [d|{-# ANN module "AllowQ - qAddTopDecls" #-}|]
-              isSuccess $ runTestQ unmockedState $ qAddTopDecls decs
+               decs <- [d|{-# ANN module "AllowQ - qAddTopDecls" #-}|]
+               isSuccess $ runTestQ unmockedState $ qAddTopDecls decs
            )
         , $( testCaseTH "qAddTempFile, qAddForeignFilePath" $ isSuccess $ do
-              fp <- runTestQ unmockedState $ qAddTempFile "c"
-              qRunIO $ writeFile fp "#include <stdio.h>"
-              runTestQ unmockedState $ qAddForeignFilePath LangC fp
+               fp <- runTestQ unmockedState $ qAddTempFile "c"
+               qRunIO $ writeFile fp "#include <stdio.h>"
+               runTestQ unmockedState $ qAddForeignFilePath LangC fp
            )
         , $( testCaseTH "qAddModFinalizer" $
-              isSuccess $
-                runTestQ unmockedState $
-                  qAddModFinalizer $
-                    return ()
+               isSuccess $
+                 runTestQ unmockedState $
+                   qAddModFinalizer $
+                     return ()
            )
         , -- Not testing qAddCorePlugin because I don't want to actually register plugins here
 
           $( testCaseTH "qGetQ, qPutQ" $
-              checkUnmockedMatches $ do
-                qPutQ "Hello"
-                qGetQ @_ @String
+               checkUnmockedMatches $ do
+                 qPutQ "Hello"
+                 qGetQ @_ @String
            )
         , $( testCaseTH "qIsExtEnabled" $
-              checkUnmockedMatches $
-                sequence
-                  [ qIsExtEnabled JavaScriptFFI
-                  , qIsExtEnabled TemplateHaskell
-                  ]
+               checkUnmockedMatches $
+                 sequence
+                   [ qIsExtEnabled JavaScriptFFI
+                   , qIsExtEnabled TemplateHaskell
+                   ]
            )
         , $( testCaseTH "qExtsEnabled" $
-              checkUnmockedMatches qExtsEnabled
+               checkUnmockedMatches qExtsEnabled
            )
         ]
 
@@ -384,7 +384,7 @@ testMockQ' MockQTests{..} =
     -- force both MockQ and MockQAllowIO to resolve the same goldens
     golden name =
       goldenVsString name ("test/goldens/MockQ_" ++ name ++ ".golden")
-        . fmap (TextL.encodeUtf8 . TextL.fromStrict . normalizeGhc910)
+        . fmap (TextL.encodeUtf8 . TextL.fromStrict . normalizeModules)
 
     labelled :: (Show a) => [(String, IO a)] -> IO Text
     labelled vals = do
@@ -396,15 +396,26 @@ testMockQ' MockQTests{..} =
     runUnsupported :: (Show a) => QState mode -> Q a -> IO Text
     runUnsupported state q = labelled [("Unsupported", runTestQWithErrors state q)]
 
-{- HLINT ignore "Redundant id" -}
-normalizeGhc910 :: Text -> Text
-normalizeGhc910 =
-  id
-#if __GLASGOW_HASKELL__ < 910
-    . replace "GHC.Show" "GHC.Internal.Show"
-    . replace "GHC.Base" "GHC.Internal.Base"
-    . replace "GHC.Num" "GHC.Internal.Num"
-    . replace "System.IO" "GHC.Internal.System.IO"
+normalizeModules :: Text -> Text
+normalizeModules s0 = foldr go s0 $ changes910 <> changes914
   where
-    replace old new = Text.replace (Text.pack old) (Text.pack new)
+    go (old, new) = Text.replace (Text.pack old) (Text.pack new)
+
+#if __GLASGOW_HASKELL__ < 910
+    changes910 =
+      [ ("GHC.Show", "GHC.Internal.Show")
+      , ("GHC.Base", "GHC.Internal.Base")
+      , ("GHC.Num", "GHC.Internal.Num")
+      , ("System.IO", "GHC.Internal.System.IO")
+      ]
+#else
+    changes910 = []
+#endif
+
+#if __GLASGOW_HASKELL__ < 914
+    changes914 =
+      [ ("GHC.Types.IO", "GHC.Internal.Types.IO")
+      ]
+#else
+    changes914 = []
 #endif
